@@ -66,7 +66,7 @@ export default function OtpComponent({ phoneNumber, password, onVerified }) {
             <div className="text-center">
                 <h1 className="text-3xl font-bold text-gray-800">Verify OTP</h1>
                 <p className="text-gray-500 mt-2">
-                    Enter the 4-digit code (last 4 of phone #) sent to: <span className="font-semibold text-gray-700">{phoneNumber}</span>
+                    Enter the 4-digit code sent to: <span className="font-semibold text-gray-700">{phoneNumber}</span>
                 </p>
             </div>
             <div className="flex justify-center gap-2 sm:gap-4">
