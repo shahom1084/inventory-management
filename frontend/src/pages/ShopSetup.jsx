@@ -35,7 +35,8 @@ export default function ShopSetup({ onShopCreated }) {
                 throw new Error(data.error || 'Failed to create shop.');
             }
             
-            // Call the function from App.jsx to switch to the home view
+            // Persist hasShop and switch to home so user stays logged in to their state
+            localStorage.setItem('hasShop', JSON.stringify(true));
             onShopCreated();
 
         } catch (err) {

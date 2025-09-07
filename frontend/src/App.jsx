@@ -1,6 +1,6 @@
 // frontend/src/App.jsx
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import LoginSignUpComponent from './features/auth/LoginSignUp';
 import OtpComponent from './features/auth/OtpComponent';
 import HomeComponent from './pages/HomeComponent';
@@ -21,19 +21,29 @@ export default function App() {
     const handleVerification = (data) => {
         // Store the token in localStorage for future API calls
         localStorage.setItem('authToken', data.token);
-
-        // Check the flag from the backend
-        if (data.has_shop) {
-            setView('home'); // User has a shop, go to dashboard
-        } else {
-            setView('shop_setup'); // New user, go to shop setup
-        }
+        // Always go to home; HomeComponent will check if a shop exists and redirect if needed
+        setView('home');
     };
     
     // NEW function to switch view after shop is created
     const handleShopCreated = () => {
         setView('home');
     };
+
+    // NEW: explicit logout handler
+    const handleLogout = () => {
+        try {
+            localStorage.removeItem('authToken');
+        } catch (e) {}
+        setView('login');
+    };
+
+    // Keep user logged in on this device by restoring session on app load
+    useEffect(() => {
+        const token = localStorage.getItem('authToken');
+        if (!token) return; // no prior session
+        setView('home');
+    }, []);
 
     const renderView = () => {
         switch (view) {
@@ -47,7 +57,7 @@ export default function App() {
             case 'shop_setup':
                 return <ShopSetup onShopCreated={handleShopCreated} />;
             case 'home':
-                return <HomeComponent />;
+                return <HomeComponent onLogout={handleLogout} />;
             case 'login':
             default:
                 return <LoginSignUpComponent 
