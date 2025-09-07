@@ -69,13 +69,8 @@ export default function App() {
     };
 
     return (
-        <div className="min-h-screen bg-gray-100 flex flex-col items-center justify-center p-4 font-sans">
-            <div className="w-full max-w-md">
-                {renderView()}
-            </div>
-            <footer className="mt-8 text-center text-gray-500 text-sm">
-                <p>&copy; {new Date().getFullYear()} Your Company. All rights reserved.</p>
-            </footer>
+        <div className="min-h-screen w-full font-sans">
+            {renderView()}
         </div>
     );
 }
