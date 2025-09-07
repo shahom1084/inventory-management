@@ -51,7 +51,7 @@ export default function OtpComponent({ phoneNumber, password, onVerified }) {
             }
 
             localStorage.setItem('authToken', data.token);
-            onVerified();
+            onVerified(data);
 
         } catch (err) {
             setError(err.message);

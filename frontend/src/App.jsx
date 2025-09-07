@@ -1,10 +1,14 @@
+// frontend/src/App.jsx
+
 import React, { useState } from 'react';
 import LoginSignUpComponent from './features/auth/LoginSignUp';
 import OtpComponent from './features/auth/OtpComponent';
 import HomeComponent from './pages/HomeComponent';
+import ShopSetup from './pages/ShopSetup'; // <-- IMPORT new component
 
 export default function App() {
-    const [view, setView] = useState('login'); // 'login', 'otp', 'home'
+    // 'login', 'otp', 'shop_setup', 'home'
+    const [view, setView] = useState('login'); 
     const [phoneNumber, setPhoneNumber] = useState('');
     const [password, setPassword] = useState('');
 
@@ -13,7 +17,21 @@ export default function App() {
         setView('otp');
     };
 
-    const handleVerification = () => {
+    // MODIFIED to handle the response from the backend
+    const handleVerification = (data) => {
+        // Store the token in localStorage for future API calls
+        localStorage.setItem('authToken', data.token);
+
+        // Check the flag from the backend
+        if (data.has_shop) {
+            setView('home'); // User has a shop, go to dashboard
+        } else {
+            setView('shop_setup'); // New user, go to shop setup
+        }
+    };
+    
+    // NEW function to switch view after shop is created
+    const handleShopCreated = () => {
         setView('home');
     };
 
@@ -25,6 +43,9 @@ export default function App() {
                             password={password}
                             onVerified={handleVerification} 
                         />;
+            // NEW CASE for setting up a shop
+            case 'shop_setup':
+                return <ShopSetup onShopCreated={handleShopCreated} />;
             case 'home':
                 return <HomeComponent />;
             case 'login':
