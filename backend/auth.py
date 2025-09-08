@@ -38,7 +38,7 @@ def create_session():
     data = request.get_json()
     phone_number = data.get('phoneNumber')
     password = data.get('password')
-    entered_otp = data.get('otp') # <-- We now expect the OTP from the frontend
+    entered_otp = data.get('otp')
 
     # --- NEW: OTP Verification Step ---
     # The temporary OTP logic is now securely on the server.
@@ -52,22 +52,21 @@ def create_session():
     conn = get_db_connection()
     cur = conn.cursor()
     try:
-        cur.execute("SELECT id, password_hash, shop_id FROM users WHERE phone_number = %s;", (phone_number,))
+        cur.execute("SELECT id, password_hash FROM users WHERE phone_number = %s;", (phone_number,))
         user_record = cur.fetchone()
         has_shop=False
         user_id = None
         if user_record:
-            # This is a Login attempt
+
             user_id = user_record[0]
             stored_hash = user_record[1].encode('utf-8')
-            has_shop = user_record[2] is not None
+            cur.execute("SELECT 1 FROM shop WHERE user_id = %s;", (user_id,))
+            has_shop = cur.fetchone() is not None
             if not bcrypt.checkpw(password.encode('utf-8'), stored_hash):
                 return jsonify({"error": "Invalid password"}), 401
         else:
-            # This is a Registration attempt
             salt = bcrypt.gensalt()
             hashed_password = bcrypt.hashpw(password.encode('utf-8'), salt)
-            # Use RETURNING id to get the new user's ID without a second query
             cur.execute(
                 "INSERT INTO users (phone_number, password_hash) VALUES (%s, %s) RETURNING id;",
                 (phone_number, hashed_password.decode('utf-8'))
