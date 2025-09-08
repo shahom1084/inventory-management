@@ -7,6 +7,7 @@ export default function EditItemModal({ item, open, onClose, onUpdated }) {
     const [wholesalePrice, setWholesalePrice] = useState('');
     const [costPrice, setCostPrice] = useState('');
     const [stockQty, setStockQty] = useState('');
+    const [siUnit, setSiUnit] = useState('');
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
 
@@ -18,6 +19,7 @@ export default function EditItemModal({ item, open, onClose, onUpdated }) {
             setWholesalePrice(item.wholesale_price || '');
             setCostPrice(item.cost_price || '');
             setStockQty(item.stock_quantity || '');
+            setSiUnit(item.si_unit || '');
         }
     }, [item]);
 
@@ -31,7 +33,8 @@ export default function EditItemModal({ item, open, onClose, onUpdated }) {
         setError('');
         try {
             const token = localStorage.getItem('authToken');
-            const res = await fetch(`/api/items/${item.id}`, {
+            const res = await fetch(`/api/items/${item.id}`,
+            {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
@@ -43,7 +46,8 @@ export default function EditItemModal({ item, open, onClose, onUpdated }) {
                     cost_price: costPrice || null,
                     wholesale_price: wholesalePrice || null,
                     retail_price: retailPrice,
-                    stock_quantity: stockQty || 0
+                    stock_quantity: stockQty || 0,
+                    si_unit: siUnit || null
                 })
             });
             const data = await res.json().catch(() => ({}));
@@ -80,6 +84,10 @@ export default function EditItemModal({ item, open, onClose, onUpdated }) {
                         <div>
                             <label className="block text-sm text-slate-700 mb-1">Retail Price</label>
                             <input value={retailPrice} onChange={(e)=>setRetailPrice(e.target.value)} type="number" step="0.01" className="w-full px-3 py-2 rounded-md border border-slate-300 focus:outline-none focus:ring-2 focus:ring-amber-500" placeholder="₹" />
+                        </div>
+                        <div>
+                            <label className="block text-sm text-slate-700 mb-1">SI Unit (optional)</label>
+                            <input value={siUnit} onChange={(e)=>setSiUnit(e.target.value)} className="w-full px-3 py-2 rounded-md border border-slate-300 focus:outline-none focus:ring-2 focus:ring-amber-500" placeholder="e.g., kg, pkt, L" />
                         </div>
                         <div>
                             <label className="block text-sm text-slate-700 mb-1">Wholesale Price (optional)</label>

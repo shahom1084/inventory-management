@@ -78,9 +78,9 @@ function ItemsTable({ items, onEdit, onDelete, onStockChange, loading, error, st
                                     {it.name}
                                     <p className="text-xs text-slate-500 font-normal">{it.description || ''}</p>
                                 </td>
-                                <td className="px-4 py-3 text-slate-700">{it.cost_price || '-'}</td>
-                                <td className="px-4 py-3 text-slate-800">{it.retail_price}</td>
-                                <td className="px-4 py-3 text-slate-700">{it.wholesale_price || '-'}</td>
+                                <td className="px-4 py-3 text-slate-700">{it.cost_price ? `₹${it.cost_price}${it.si_unit ? `/${it.si_unit}` : ''}` : '-'}</td>
+                                <td className="px-4 py-3 text-slate-800 font-semibold">{it.retail_price ? `₹${it.retail_price}${it.si_unit ? `/${it.si_unit}` : ''}` : '-'}</td>
+                                <td className="px-4 py-3 text-slate-700">{it.wholesale_price ? `₹${it.wholesale_price}${it.si_unit ? `/${it.si_unit}` : ''}` : '-'}</td>
                                 <td className="px-4 py-3">
                                     <StockControl 
                                         stock={it.stock_quantity}
@@ -131,9 +131,9 @@ function ItemsCards({ items, onEdit, onDelete, onStockChange, loading, error, st
                         </div>
                     </div>
                     <div className="mt-3 grid grid-cols-3 gap-2 text-sm">
-                        <div className="bg-slate-50 text-slate-700 rounded-md px-2 py-1 text-center">Cost {it.cost_price || '-'}</div>
-                        <div className="bg-emerald-50 text-emerald-700 rounded-md px-2 py-1 text-center">Retail {it.retail_price}</div>
-                        <div className="bg-teal-50 text-teal-700 rounded-md px-2 py-1 text-center">Wholesale {it.wholesale_price || '-'}</div>
+                        <div className="bg-slate-50 text-slate-700 rounded-md px-2 py-1 text-center">Cost {it.cost_price ? `₹${it.cost_price}${it.si_unit ? `/${it.si_unit}` : ''}` : '-'}</div>
+                        <div className="bg-emerald-50 text-emerald-700 rounded-md px-2 py-1 text-center font-semibold">Retail {it.retail_price ? `₹${it.retail_price}${it.si_unit ? `/${it.si_unit}` : ''}` : '-'}</div>
+                        <div className="bg-teal-50 text-teal-700 rounded-md px-2 py-1 text-center">Wholesale {it.wholesale_price ? `₹${it.wholesale_price}${it.si_unit ? `/${it.si_unit}` : ''}` : '-'}</div>
                     </div>
                     <div className="mt-3 flex items-center justify-between gap-2 text-sm">
                         <span className="font-semibold">Stock:</span>

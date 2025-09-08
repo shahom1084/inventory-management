@@ -15,7 +15,7 @@ def get_items(current_user_id):
         if not shop_record:
             return jsonify({"error": "No shop associated with this user. Please register your shop."}), 404
         shop_id = shop_record[0]
-        cur.execute("SELECT id, name, description, cost_price, wholesale_price, retail_price, stock_quantity FROM items WHERE shop_id=%s;", (shop_id,))
+        cur.execute("SELECT id, name, description, cost_price, wholesale_price, retail_price, stock_quantity, si_unit FROM items WHERE shop_id=%s;", (shop_id,))
         items = cur.fetchall()
         items_list = [{
             "id": item[0],
@@ -24,7 +24,8 @@ def get_items(current_user_id):
             "cost_price": str(item[3]) if item[3] is not None else None,
             "wholesale_price": str(item[4]) if item[4] is not None else None,
             "retail_price": str(item[5]) if item[5] is not None else None,
-            "stock_quantity": item[6]
+            "stock_quantity": item[6],
+            "si_unit": item[7]
         } for item in items]
         return jsonify({"items": items_list}), 200
     except Exception as e:
@@ -43,11 +44,11 @@ def create_item(current_user_id):
     wholesale_price = data.get('wholesale_price')
     retail_price = data.get('retail_price')
     stock_quantity = data.get('stock_quantity')
+    si_unit = data.get('si_unit')
 
     if not name or not retail_price:
         return jsonify({"error": "Missing required fields"}), 400
 
-    # Convert empty strings to None for numeric fields
     cost_price = cost_price if cost_price else None
     wholesale_price = wholesale_price if wholesale_price else None
     stock_quantity = stock_quantity if stock_quantity else 0
@@ -61,8 +62,8 @@ def create_item(current_user_id):
             return jsonify({"error": "No shop associated with this user. Please register your shop."}), 404
         shop_id = shop_record[0]
         cur.execute(
-            "INSERT INTO items (shop_id, name, description, cost_price, wholesale_price, retail_price, stock_quantity) VALUES (%s, %s, %s, %s, %s, %s, %s);",
-            (shop_id, name, description, cost_price, wholesale_price, retail_price, stock_quantity)
+            "INSERT INTO items (shop_id, name, description, cost_price, wholesale_price, retail_price, stock_quantity, si_unit) VALUES (%s, %s, %s, %s, %s, %s, %s, %s);",
+            (shop_id, name, description, cost_price, wholesale_price, retail_price, stock_quantity, si_unit)
         )
         conn.commit()
         return jsonify({"message": "Item created successfully"}), 201
@@ -83,15 +84,13 @@ def update_item(current_user_id, item_id):
     wholesale_price = data.get('wholesale_price')
     retail_price = data.get('retail_price')
     stock_quantity = data.get('stock_quantity')
+    si_unit = data.get('si_unit')
 
     if not name or not retail_price:
         return jsonify({"error": "Missing required fields"}), 400
 
-    # Convert empty strings to None for numeric fields
     cost_price = cost_price if cost_price else None
     wholesale_price = wholesale_price if wholesale_price else None
-
-    print(f"DEBUG: cost_price={cost_price} (type: {type(cost_price)}), wholesale_price={wholesale_price} (type: {type(wholesale_price)})", flush=True)
 
     conn = get_db_connection()
     cur = conn.cursor()
@@ -104,10 +103,10 @@ def update_item(current_user_id, item_id):
         cur.execute(
             '''
             UPDATE items 
-            SET name = %s, description = %s, cost_price = %s, wholesale_price = %s, retail_price = %s, stock_quantity = %s
+            SET name = %s, description = %s, cost_price = %s, wholesale_price = %s, retail_price = %s, stock_quantity = %s, si_unit = %s
             WHERE id = %s;
             ''',
-            (name, description, cost_price, wholesale_price, retail_price, stock_quantity, item_id)
+            (name, description, cost_price, wholesale_price, retail_price, stock_quantity, si_unit, item_id)
         )
         conn.commit()
         return jsonify({"message": "Item updated successfully"}), 200
@@ -147,7 +146,7 @@ def delete_item(current_user_id, item_id):
 @token_required
 def update_stock(current_user_id, item_id):
     data = request.get_json()
-    action = data.get('action') # 'increment' or 'decrement'
+    action = data.get('action')
 
     if action not in ['increment', 'decrement']:
         return jsonify({"error": "Invalid action"}), 400
