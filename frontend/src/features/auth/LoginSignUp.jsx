@@ -88,77 +88,79 @@ export default function LoginSignUpComponent({ onOtpSent, setPhoneNumber, phoneN
     const isButtonDisabled = loading || checkingUser || phoneNumber.length !== 10 || !password || (isSignupFlow && !confirmPassword);
 
     return (
-        <div className="w-full max-w-md p-8 space-y-6 bg-white rounded-2xl shadow-lg">
-            <div className="text-center">
-                <h1 className="text-3xl font-bold text-gray-800">Welcome</h1>
-                <p className="text-gray-500 mt-2">Enter your phone to continue</p>
-            </div>
-            
-            <form className="space-y-6" onSubmit={handleSubmit}>
-                <div className="relative">
-                    <span className="absolute inset-y-0 left-0 flex items-center pl-3">
-                       <SmartphoneIcon className="h-5 w-5 text-gray-400"/>
-                    </span>
-                    <input
-                        type="tel"
-                        placeholder="10-digit mobile number"
-                        value={phoneNumber}
-                        onChange={handlePhoneChange}
-                        className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition duration-200"
-                    />
-                     {checkingUser && (
-                        <span className="absolute inset-y-0 right-0 flex items-center pr-3">
-                            <LoaderCircleIcon className="h-5 w-5 text-indigo-500"/>
-                        </span>
-                    )}
+        <div className="min-h-screen w-full flex items-center justify-center px-4 py-8">
+            <div className="w-full max-w-md p-8 space-y-6 bg-white rounded-2xl shadow-lg">
+                <div className="text-center">
+                    <h1 className="text-3xl font-bold text-gray-800">Welcome</h1>
+                    <p className="text-gray-500 mt-2">Enter your phone to continue</p>
                 </div>
+                
+                <form className="space-y-6" onSubmit={handleSubmit}>
+                    <div className="relative">
+                        <span className="absolute inset-y-0 left-0 flex items-center pl-3">
+                           <SmartphoneIcon className="h-5 w-5 text-gray-400"/>
+                        </span>
+                        <input
+                            type="tel"
+                            placeholder="10-digit mobile number"
+                            value={phoneNumber}
+                            onChange={handlePhoneChange}
+                            className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition duration-200"
+                        />
+                         {checkingUser && (
+                            <span className="absolute inset-y-0 right-0 flex items-center pr-3">
+                                <LoaderCircleIcon className="h-5 w-5 text-indigo-500"/>
+                            </span>
+                        )}
+                    </div>
 
-                <div className={`transition-all duration-500 ease-in-out ${userExists !== null ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0 overflow-hidden'}`}>
-                    { (isLoginFlow || isSignupFlow) && (
-                        <div className="space-y-4 pt-2">
-                           <p className="text-center text-sm font-medium text-indigo-600">
-                                {isLoginFlow ? 'Welcome back! Please enter your password.' : 'Looks like you\'re new! Create a password.'}
-                            </p>
-                            <div className="relative">
-                                <span className="absolute inset-y-0 left-0 flex items-center pl-3">
-                                   <KeyRoundIcon className="h-5 w-5 text-gray-400"/>
-                                </span>
-                                <input
-                                    type="password"
-                                    placeholder={isSignupFlow ? "Create Password" : "Password"}
-                                    value={password}
-                                    onChange={(e) => setPassword(e.target.value)}
-                                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition duration-200"
-                                />
-                            </div>
-                            { isSignupFlow && (
+                    <div className={`transition-all duration-500 ease-in-out ${userExists !== null ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0 overflow-hidden'}`}>
+                        { (isLoginFlow || isSignupFlow) && (
+                            <div className="space-y-4 pt-2">
+                               <p className="text-center text-sm font-medium text-indigo-600">
+                                    {isLoginFlow ? 'Welcome back! Please enter your password.' : 'Looks like you\'re new! Create a password.'}
+                                </p>
                                 <div className="relative">
                                     <span className="absolute inset-y-0 left-0 flex items-center pl-3">
-                                        <KeyRoundIcon className="h-5 w-5 text-gray-400"/>
+                                       <KeyRoundIcon className="h-5 w-5 text-gray-400"/>
                                     </span>
                                     <input
                                         type="password"
-                                        placeholder="Confirm Password"
-                                        value={confirmPassword}
-                                        onChange={(e) => setConfirmPassword(e.target.value)}
+                                        placeholder={isSignupFlow ? "Create Password" : "Password"}
+                                        value={password}
+                                        onChange={(e) => setPassword(e.target.value)}
                                         className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition duration-200"
                                     />
                                 </div>
-                            )}
-                        </div>
-                    )}
-                </div>
+                                { isSignupFlow && (
+                                    <div className="relative">
+                                        <span className="absolute inset-y-0 left-0 flex items-center pl-3">
+                                            <KeyRoundIcon className="h-5 w-5 text-gray-400"/>
+                                        </span>
+                                        <input
+                                            type="password"
+                                            placeholder="Confirm Password"
+                                            value={confirmPassword}
+                                            onChange={(e) => setConfirmPassword(e.target.value)}
+                                            className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition duration-200"
+                                        />
+                                    </div>
+                                )}
+                            </div>
+                        )}
+                    </div>
 
-                {error && <p className="text-sm text-red-500 text-center">{error}</p>}
+                    {error && <p className="text-sm text-red-500 text-center">{error}</p>}
 
-                <button
-                    type="submit"
-                    disabled={isButtonDisabled}
-                    className="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:bg-indigo-300 disabled:cursor-not-allowed transition-colors duration-300"
-                >
-                    {loading ? <LoaderCircleIcon className="h-5 w-5 text-white"/> : 'Get OTP'}
-                </button>
-            </form>
+                    <button
+                        type="submit"
+                        disabled={isButtonDisabled}
+                        className="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:bg-indigo-300 disabled:cursor-not-allowed transition-colors duration-300"
+                    >
+                        {loading ? <LoaderCircleIcon className="h-5 w-5 text-white"/> : 'Get OTP'}
+                    </button>
+                </form>
+            </div>
         </div>
     );
 }
