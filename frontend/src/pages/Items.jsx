@@ -2,6 +2,7 @@ import React, { useMemo, useState, useEffect, useCallback } from 'react';
 import NewItemModal from '../components/items/NewItemModal';
 import EditItemModal from '../components/items/EditItemModal';
 import StockControl from '../components/items/StockControl';
+import ConfirmationModal from '../components/common/ConfirmationModal';
 
 function HeaderBar({ onNewItem, initials }) {
     return (
@@ -90,11 +91,11 @@ function ItemsTable({ items, onEdit, onDelete, onStockChange, loading, error, st
                                 </td>
                                 <td className="px-4 py-3">
                                     <div className="w-full flex justify-end gap-2">
-                                        <button onClick={() => onEdit(it)} className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md border border-slate-200 bg-white hover:bg-slate-100 text-xs">
-                                            Edit
-                                        </button>
-                                        <button onClick={() => onDelete(it.id)} className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md border border-red-200 bg-red-50 hover:bg-red-100 text-red-600 text-xs">
+                                        <button onClick={() => onDelete(it.id)} className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md border border-red-200 bg-red-50 hover:bg-red-100 text-red-600 text-xs font-semibold">
                                             Delete
+                                        </button>
+                                        <button onClick={() => onEdit(it)} className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md border border-slate-200 bg-white hover:bg-slate-100 text-xs font-semibold">
+                                            Edit
                                         </button>
                                     </div>
                                 </td>
@@ -120,9 +121,13 @@ function ItemsCards({ items, onEdit, onDelete, onStockChange, loading, error, st
                             <h4 className="text-slate-800 font-semibold">{it.name}</h4>
                             <p className="text-xs text-slate-500 mt-0.5">{it.description || '—'}</p>
                         </div>
-                        <div className='flex flex-col items-end gap-2'>
-                            <button onClick={() => onEdit(it)} className="text-xs px-3 py-1.5 rounded-md border border-slate-200 bg-white">Edit</button>
-                            <button onClick={() => onDelete(it.id)} className="text-xs px-3 py-1.5 rounded-md border border-red-200 bg-red-50 text-red-600">Delete</button>
+                        <div className='flex items-center gap-2'>
+                            <button onClick={() => onDelete(it.id)} className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md border border-red-200 bg-red-50 hover:bg-red-100 text-red-600 text-xs font-semibold">
+                                Delete
+                            </button>
+                            <button onClick={() => onEdit(it)} className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md border border-slate-200 bg-white hover:bg-slate-100 text-xs font-semibold">
+                                Edit
+                            </button>
                         </div>
                     </div>
                     <div className="mt-3 grid grid-cols-3 gap-2 text-sm">
@@ -155,6 +160,7 @@ export default function ItemsPage() {
     const [editingItem, setEditingItem] = useState(null);
     const [shopName, setShopName] = useState('');
     const [stockLoading, setStockLoading] = useState({});
+    const [itemToDelete, setItemToDelete] = useState(null);
 
     const getInitials = (name) => {
         if (!name || typeof name !== 'string') return 'SN';
@@ -212,20 +218,25 @@ export default function ItemsPage() {
         setShowEdit(true);
     };
 
-    const handleDelete = async (itemId) => {
-        if (!window.confirm("Are you sure you want to delete this item?")) return;
+    const handleDeleteRequest = (itemId) => {
+        setItemToDelete(itemId);
+    };
 
+    const executeDelete = async () => {
+        if (!itemToDelete) return;
         try {
             const token = localStorage.getItem('authToken');
-            const res = await fetch(`/api/items/${itemId}`, { 
+            const res = await fetch(`/api/items/${itemToDelete}`, { 
                 method: 'DELETE',
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             const data = await res.json();
             if (!res.ok) throw new Error(data.error || 'Failed to delete');
-            setItems(prev => prev.filter(i => i.id !== itemId));
+            setItems(prev => prev.filter(i => i.id !== itemToDelete));
+            setItemToDelete(null);
         } catch (err) {
             alert("Error: " + err.message);
+            setItemToDelete(null);
         }
     };
 
@@ -256,11 +267,18 @@ export default function ItemsPage() {
             <div className="w-full px-4 sm:px-6 lg:px-10 py-6 space-y-4">
                 <HeaderBar onNewItem={handleNewItem} initials={getInitials(shopName)} />
                 <SearchBar value={query} onChange={setQuery} />
-                <ItemsTable items={filtered} onEdit={handleEdit} onDelete={handleDelete} onStockChange={handleStockChange} loading={loading} error={error} stockLoading={stockLoading} />
-                <ItemsCards items={filtered} onEdit={handleEdit} onDelete={handleDelete} onStockChange={handleStockChange} loading={loading} error={error} stockLoading={stockLoading} />
+                <ItemsTable items={filtered} onEdit={handleEdit} onDelete={handleDeleteRequest} onStockChange={handleStockChange} loading={loading} error={error} stockLoading={stockLoading} />
+                <ItemsCards items={filtered} onEdit={handleEdit} onDelete={handleDeleteRequest} onStockChange={handleStockChange} loading={loading} error={error} stockLoading={stockLoading} />
             </div>
             <NewItemModal open={showNew} onClose={() => setShowNew(false)} onCreated={fetchItems} />
             {editingItem && <EditItemModal item={editingItem} open={showEdit} onClose={() => { setShowEdit(false); setEditingItem(null); }} onUpdated={fetchItems} />}
+            <ConfirmationModal 
+                open={!!itemToDelete}
+                onClose={() => setItemToDelete(null)}
+                onConfirm={executeDelete}
+                title="Delete Item"
+                message="Are you sure you want to delete this item? This action cannot be undone."
+            />
         </div>
     );
 }
