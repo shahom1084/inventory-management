@@ -1,38 +1,62 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
-export default function HomeComponent({ onLogout, onRequireShopSetup }) {
-    const [loading, setLoading] = useState(true);
+export default function HomeComponent({ onLogout }) {
+    // State to hold the shop name, initialized to 'Loading...'
+    const [shopName, setShopName] = useState('Loading...');
+    const [error, setError] = useState(null);
 
+    // Helper to derive initials from the shop name (first letters of first two words)
+    const getInitials = (name) => {
+        if (!name || typeof name !== 'string') return 'SN';
+        const parts = name.trim().split(/\s+/).filter(Boolean);
+        if (parts.length === 0) return 'SN';
+        if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+        return (parts[0][0] + parts[1][0]).toUpperCase();
+    };
+
+    // useEffect hook to fetch data when the component mounts
     useEffect(() => {
-        const token = localStorage.getItem('authToken');
-        if (!token) {
-            setLoading(false);
-            return;
-        }
-        (async () => {
+        const fetchShopName = async () => {
             try {
-                const res = await fetch('/api/shop', {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                if (res.status === 404) {
-                    onRequireShopSetup && onRequireShopSetup();
+                // Retrieve the authentication token from localStorage
+                const token = localStorage.getItem('authToken');
+                if (!token) {
+                    setError('Authentication token not found.');
+                    setShopName('Shop Name');
                     return;
                 }
-            } catch (e) {
-                // ignore and render UI; errors can be handled later
-            } finally {
-                setLoading(false);
-            }
-        })();
-    }, [onRequireShopSetup]);
 
-    if (loading) {
-        return (
-            <div className="min-h-screen w-full flex items-center justify-center bg-[#f7f5f2]">
-                <div className="text-slate-600">Loading...</div>
-            </div>
-        );
-    }
+                // Fetch current user's shop from backend
+                const response = await fetch('/api/shop', {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                const data = await response.json().catch(() => ({}));
+
+                if (response.ok && data && data.shop) {
+                    // Update the shop name from API
+                    setShopName(data.shop.name || 'Shop Name');
+                } else if (response.status === 404) {
+                    // No shop found yet
+                    setShopName('Register Your Shop');
+                } else {
+                    throw new Error((data && data.error) || 'Failed to fetch shop');
+                }
+
+            } catch (err) {
+                console.error('Error fetching shop name:', err);
+                setError(err.message);
+                setShopName('Shop Name');
+            }
+        };
+
+        fetchShopName();
+    }, []);
+
+    const initials = getInitials(shopName);
 
     return (
         <div className="min-h-screen w-full bg-[#f7f5f2]">
@@ -41,9 +65,10 @@ export default function HomeComponent({ onLogout, onRequireShopSetup }) {
                 <div className="w-full px-4 sm:px-6 lg:px-10 h-16 flex items-center justify-between">
                     <div className="flex items-center gap-3">
                         <div className="w-8 h-8 rounded-md bg-amber-500/90 text-white flex items-center justify-center shadow-sm">
-                            <span className="text-sm font-bold">VD</span>
+                            <span className="text-sm font-bold">{initials}</span>
                         </div>
-                        <span className="font-semibold tracking-wide">Shop Name</span>
+                        {/* Display the dynamic shop name here */}
+                        <span className="font-semibold tracking-wide">{shopName}</span>
                     </div>
                     <nav className="hidden md:flex items-center gap-6 text-sm">
                         <a className="hover:text-white/90 text-slate-300" href="#">Home</a>
