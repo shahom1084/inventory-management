@@ -58,6 +58,11 @@ export default function HomeComponent({ onLogout }) {
 
     const initials = getInitials(shopName);
 
+    const gotoItems = (e) => {
+        e.preventDefault();
+        window.location.hash = '#/items';
+    };
+
     return (
         <div className="min-h-screen w-full bg-[#f7f5f2]">
             {/* Top Navigation Bar */}
@@ -72,7 +77,7 @@ export default function HomeComponent({ onLogout }) {
                     </div>
                     <nav className="hidden md:flex items-center gap-6 text-sm">
                         <a className="hover:text-white/90 text-slate-300" href="#">Home</a>
-                        <a className="hover:text-white/90 text-slate-300" href="#">Items</a>
+                        <a className="hover:text-white/90 text-slate-300" href="#" onClick={gotoItems}>Items</a>
                         <a className="hover:text-white/90 text-slate-300" href="#">Bills</a>
                         <a className="hover:text-white/90 text-slate-300" href="#">Ledger</a>
                     </nav>
@@ -100,7 +105,7 @@ export default function HomeComponent({ onLogout }) {
                 {/* Dashboard Grid */}
                 <div className="grid gap-5 lg:gap-7 grid-cols-1 sm:grid-cols-2 [grid-template-columns:repeat(auto-fit,minmax(280px,1fr))]">
                     {/* Card: Items */}
-                    <div className="bg-white rounded-2xl shadow p-6 flex items-center gap-5 border border-slate-100 min-h-[160px]">
+                    <button onClick={gotoItems} className="text-left bg-white rounded-2xl shadow p-6 flex items-center gap-5 border border-slate-100 min-h-[160px] hover:shadow-md transition-shadow">
                         <div className="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
                             <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M20 13V7a2 2 0 00-2-2h-4m-4 0H6a2 2 0 00-2 2v6m0 0v4a2 2 0 002 2h4m8-6v4a2 2 0 01-2 2h-4M9 7h.01M9 11h.01M13 7h.01M13 11h.01" />
@@ -111,7 +116,7 @@ export default function HomeComponent({ onLogout }) {
                             <p className="text-xs text-slate-500">Manage inventory & pricing</p>
                             <p className="mt-2 text-sm text-emerald-600 font-semibold">0 Total Items</p>
                         </div>
-                    </div>
+                    </button>
 
                     {/* Card: Customers */}
                     <div className="bg-white rounded-2xl shadow p-6 flex items-center gap-5 border border-slate-100 min-h-[160px]">
