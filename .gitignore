@@ -5,6 +5,7 @@ venv/
 config.py
 db.txt
 firebaseconfig.txt
+*.png
 
 # Node (if any)
 node_modules/

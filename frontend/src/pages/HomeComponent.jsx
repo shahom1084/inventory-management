@@ -1,62 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
+import { useShop } from '../context/ShopContext.jsx';
 
 export default function HomeComponent({ onLogout }) {
-    // State to hold the shop name, initialized to 'Loading...'
-    const [shopName, setShopName] = useState('Loading...');
-    const [error, setError] = useState(null);
-
-    // Helper to derive initials from the shop name (first letters of first two words)
-    const getInitials = (name) => {
-        if (!name || typeof name !== 'string') return 'SN';
-        const parts = name.trim().split(/\s+/).filter(Boolean);
-        if (parts.length === 0) return 'SN';
-        if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
-        return (parts[0][0] + parts[1][0]).toUpperCase();
-    };
-
-    // useEffect hook to fetch data when the component mounts
-    useEffect(() => {
-        const fetchShopName = async () => {
-            try {
-                // Retrieve the authentication token from localStorage
-                const token = localStorage.getItem('authToken');
-                if (!token) {
-                    setError('Authentication token not found.');
-                    setShopName('Shop Name');
-                    return;
-                }
-
-                // Fetch current user's shop from backend
-                const response = await fetch('/api/shop', {
-                    method: 'GET',
-                    headers: {
-                        'Authorization': `Bearer ${token}`
-                    }
-                });
-
-                const data = await response.json().catch(() => ({}));
-
-                if (response.ok && data && data.shop) {
-                    // Update the shop name from API
-                    setShopName(data.shop.name || 'Shop Name');
-                } else if (response.status === 404) {
-                    // No shop found yet
-                    setShopName('Register Your Shop');
-                } else {
-                    throw new Error((data && data.error) || 'Failed to fetch shop');
-                }
-
-            } catch (err) {
-                console.error('Error fetching shop name:', err);
-                setError(err.message);
-                setShopName('Shop Name');
-            }
-        };
-
-        fetchShopName();
-    }, []);
-
-    const initials = getInitials(shopName);
+    const { shopName, initials } = useShop();
 
     const gotoItems = (e) => {
         e.preventDefault();
@@ -73,7 +19,7 @@ export default function HomeComponent({ onLogout }) {
                             <span className="text-sm font-bold">{initials}</span>
                         </div>
                         {/* Display the dynamic shop name here */}
-                        <span className="font-semibold tracking-wide">{shopName}</span>
+                        <span className="font-semibold tracking-wide">{shopName || 'Shop Name'}</span>
                     </div>
                     <nav className="hidden md:flex items-center gap-6 text-sm">
                         <a className="hover:text-white/90 text-slate-300" href="#">Home</a>
@@ -150,7 +96,7 @@ export default function HomeComponent({ onLogout }) {
                     <div className="bg-white rounded-2xl shadow p-6 flex items-center gap-5 border border-slate-100 min-h-[160px]">
                         <div className="w-12 h-12 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center shrink-0">
                             <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M12 8c-2.21 0-4 1.343-4 3s1.79 3 4 3 4-1.343 4-3-1.79-3-4-3zm0 0V4m0 10v6" />
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M12 8c-2.21 0-4 1.343-4 3s1.79 3 4 3 4-1.343 4-3-1.79-3-4-3zm 0 0V4m0 10v6" />
                             </svg>
                         </div>
                         <div className="flex-1">
