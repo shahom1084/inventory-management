@@ -1,6 +1,39 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 
-export default function HomeComponent({ onLogout }) {
+export default function HomeComponent({ onLogout, onRequireShopSetup }) {
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        const token = localStorage.getItem('authToken');
+        if (!token) {
+            setLoading(false);
+            return;
+        }
+        (async () => {
+            try {
+                const res = await fetch('/api/shop', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (res.status === 404) {
+                    onRequireShopSetup && onRequireShopSetup();
+                    return;
+                }
+            } catch (e) {
+                // ignore and render UI; errors can be handled later
+            } finally {
+                setLoading(false);
+            }
+        })();
+    }, [onRequireShopSetup]);
+
+    if (loading) {
+        return (
+            <div className="min-h-screen w-full flex items-center justify-center bg-[#f7f5f2]">
+                <div className="text-slate-600">Loading...</div>
+            </div>
+        );
+    }
+
     return (
         <div className="min-h-screen w-full bg-[#f7f5f2]">
             {/* Top Navigation Bar */}

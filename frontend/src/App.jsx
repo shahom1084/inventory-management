@@ -57,7 +57,7 @@ export default function App() {
             case 'shop_setup':
                 return <ShopSetup onShopCreated={handleShopCreated} />;
             case 'home':
-                return <HomeComponent onLogout={handleLogout} />;
+                return <HomeComponent onLogout={handleLogout} onRequireShopSetup={() => setView('shop_setup')} />;
             case 'login':
             default:
                 return <LoginSignUpComponent 

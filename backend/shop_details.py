@@ -44,27 +44,41 @@ def create_shop(current_user_id):
     conn = get_db_connection()
     cur = conn.cursor()
     try:
-        # Step 1: Insert the new shop and get its generated UUID
+        # Insert the new shop, link to current user via user_id
         cur.execute(
-            "INSERT INTO shop (name, gstin, address) VALUES (%s, %s, %s) RETURNING id;",
-            (name, gstin, address)
+            "INSERT INTO shop (name, gstin, address, user_id) VALUES (%s, %s, %s, %s) RETURNING id;",
+            (name, gstin, address, current_user_id)
         )
         new_shop_id = cur.fetchone()[0]
-
-        # Step 2: Update the users table to link this new shop to the user
-        cur.execute(
-            "UPDATE users SET shop_id = %s WHERE id = %s;",
-            (new_shop_id, current_user_id)
-        )
-        
-        # Commit both operations as a single transaction
         conn.commit()
-        
-        return jsonify({"message": "Shop created and linked successfully", "shop_id": new_shop_id}), 201
+        return jsonify({"message": "Shop created successfully", "shop_id": new_shop_id}), 201
 
     except Exception as e:
-        conn.rollback() # Rollback both operations if anything fails
+        conn.rollback()
         print(f"Error in create_shop: {e}")
+        return jsonify({"error": "An internal server error occurred"}), 500
+    finally:
+        cur.close()
+        conn.close()
+
+@shop_bp.route('/api/shop', methods=['GET'])
+@token_required
+def get_shop(current_user_id):
+    """Returns the current user's shop or 404 if none exists."""
+    conn = get_db_connection()
+    cur = conn.cursor()
+    try:
+        cur.execute(
+            "SELECT id, name, gstin, address FROM shop WHERE user_id = %s LIMIT 1;",
+            (current_user_id,)
+        )
+        row = cur.fetchone()
+        if not row:
+            return jsonify({"error": "No shop found for user"}), 404
+        shop = {"id": row[0], "name": row[1], "gstin": row[2], "address": row[3]}
+        return jsonify({"shop": shop}), 200
+    except Exception as e:
+        print(f"Error in get_shop: {e}")
         return jsonify({"error": "An internal server error occurred"}), 500
     finally:
         cur.close()
