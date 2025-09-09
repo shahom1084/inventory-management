@@ -17,11 +17,11 @@ def get_bills(current_user_id):
             return jsonify({"error": "No shop associated with this user.Please register your shop"}), 404
         
         shop_id = shop_record[0]
-        cur.execute("SELECT id,customer_id,total_amount, created_at FROM bills WHERE shop_id = %s ORDER BY created_at DESC;", (shop_id,))
+        cur.execute("SELECT id,customer_id,total_amount, bill_date FROM bills WHERE shop_id = %s", (shop_id,))
         bills = cur.fetchall()
         
         bills_list = [
-            {"id": bill[0], "customer_id":bill[1],"totalAmount": float(bill[2]), "createdAt": bill[3].isoformat()}
+            {"id": bill[0], "customer_id":bill[1],"totalAmount": float(bill[2]), "bill_date": bill[3].isoformat()}
             for bill in bills
         ]
         

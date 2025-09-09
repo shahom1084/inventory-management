@@ -95,7 +95,7 @@ export default function NewBillModal({ open, onClose, onCreated }) {
                     <input type="text" placeholder="Customer Phone" value={customerPhone} onChange={e => setCustomerPhone(e.target.value)} className="w-full px-3 py-2 border rounded-md text-sm" />
                 </div>
 
-                <div className="flex-grow overflow-y-auto border-t border-b py-2">
+                <div className="flex-grow border-t border-b py-2">
                     <div className="w-full">
                         <div className="flex flex-col sm:flex-row justify-between sm:items-center mb-2 gap-2">
                             <h4 className="font-semibold">Bill Items</h4>
@@ -108,7 +108,7 @@ export default function NewBillModal({ open, onClose, onCreated }) {
                             </div>
                         </div>
                         
-                        <div className="w-full overflow-x-auto">
+                        <div className="w-full">
                             <table className="min-w-full text-left text-xs sm:text-sm">
                                 <thead className="bg-slate-50 text-slate-600 sticky top-0">
                                     <tr>
