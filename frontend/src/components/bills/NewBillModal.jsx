@@ -4,7 +4,7 @@ import SearchableItemDropdown from './SearchableItemDropdown';
 export default function NewBillModal({ open, onClose, onCreated }) {
     const [customerName, setCustomerName] = useState('');
     const [customerPhone, setCustomerPhone] = useState('');
-    const [billItems, setBillItems] = useState([{ id: 1, item: null, quantity: 1 }]);
+    const [billItems, setBillItems] = useState([{ id: 1, item: null, quantity: 1, price: 0 }]);
     const [allItems, setAllItems] = useState([]);
     const [priceType, setPriceType] = useState('retail_price');
     const [loading, setLoading] = useState(false);
@@ -32,7 +32,13 @@ export default function NewBillModal({ open, onClose, onCreated }) {
     }, [open, fetchItems]);
 
     const handleItemChange = (rowId, selectedItem) => {
-        setBillItems(billItems.map(row => row.id === rowId ? { ...row, item: selectedItem } : row));
+        setBillItems(billItems.map(row => {
+            if (row.id === rowId) {
+                const price = selectedItem ? parseFloat(selectedItem[priceType]) || 0 : 0;
+                return { ...row, item: selectedItem, price: price };
+            }
+            return row;
+        }));
     };
 
     const handleQuantityChange = (rowId, quantity) => {
@@ -40,8 +46,13 @@ export default function NewBillModal({ open, onClose, onCreated }) {
         setBillItems(billItems.map(row => row.id === rowId ? { ...row, quantity: numQuantity } : row));
     };
 
+    const handlePriceChange = (rowId, price) => {
+        const numPrice = Math.max(0, Number(price));
+        setBillItems(billItems.map(row => row.id === rowId ? { ...row, price: numPrice } : row));
+    };
+
     const addNewRow = () => {
-        setBillItems([...billItems, { id: Date.now(), item: null, quantity: 1 }]);
+        setBillItems([...billItems, { id: Date.now(), item: null, quantity: 1, price: 0 }]);
     };
 
     const removeRow = (rowId) => {
@@ -50,11 +61,9 @@ export default function NewBillModal({ open, onClose, onCreated }) {
 
     const totalAmount = useMemo(() => {
         return billItems.reduce((acc, row) => {
-            if (!row.item) return acc;
-            const price = parseFloat(row.item[priceType]) || 0;
-            return acc + (price * row.quantity);
+            return acc + (row.price * row.quantity);
         }, 0);
-    }, [billItems, priceType]);
+    }, [billItems]);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -62,6 +71,17 @@ export default function NewBillModal({ open, onClose, onCreated }) {
         alert('Creating bill...');
         onClose();
     };
+
+    useEffect(() => {
+        // Update prices if priceType changes
+        setBillItems(currentItems => currentItems.map(row => {
+            if (row.item) {
+                const newPrice = parseFloat(row.item[priceType]) || 0;
+                return { ...row, price: newPrice };
+            }
+            return row;
+        }));
+    }, [priceType]);
 
     if (!open) return null;
 
@@ -101,18 +121,30 @@ export default function NewBillModal({ open, onClose, onCreated }) {
                                 </thead>
                                 <tbody>
                                     {billItems.map((row, index) => {
-                                        const price = row.item ? parseFloat(row.item[priceType]) || 0 : 0;
-                                        const total = price * row.quantity;
+                                        const total = row.price * row.quantity;
+                                        const siUnit = row.item?.si_unit ? `/${row.item.si_unit}` : '';
                                         return (
                                             <tr key={row.id} className="border-t">
                                                 <td className="px-1 py-1 align-top">
                                                     <SearchableItemDropdown 
                                                         items={allItems} 
+                                                        selectedItem={row.item}
                                                         onItemSelected={(item) => handleItemChange(row.id, item)}
                                                         onClear={() => handleItemChange(row.id, null)}
                                                     />
                                                 </td>
-                                                <td className="px-2 py-2 align-top">₹{price.toFixed(2)}</td>
+                                                <td className="px-2 py-2 align-top">
+                                                    <div className="flex items-center">
+                                                        <span className="mr-1">₹</span>
+                                                        <input 
+                                                            type="number"
+                                                            value={row.price.toFixed(2)}
+                                                            onChange={(e) => handlePriceChange(row.id, e.target.value)}
+                                                            className="w-24 border rounded-md p-1"
+                                                        />
+                                                        {siUnit && <span className="ml-1 text-slate-500">{siUnit}</span>}
+                                                    </div>
+                                                </td>
                                                 <td className="px-1 py-1 align-top">
                                                     <input 
                                                         type="number" 

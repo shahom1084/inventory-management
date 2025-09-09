@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 
-export default function SearchableItemDropdown({ items, onItemSelected, onClear }) {
+export default function SearchableItemDropdown({ items, selectedItem, onItemSelected, onClear }) {
     const [query, setQuery] = useState('');
     const [isOpen, setIsOpen] = useState(false);
     const dropdownRef = useRef(null);
@@ -12,9 +12,17 @@ export default function SearchableItemDropdown({ items, onItemSelected, onClear 
 
     const handleSelect = (item) => {
         onItemSelected(item);
-        setQuery(item.name);
+        setQuery('');
         setIsOpen(false);
     };
+
+    const handleChange = (e) => {
+        const newQuery = e.target.value;
+        setQuery(newQuery);
+        if (!newQuery) {
+            onClear();
+        }
+    }
 
     useEffect(() => {
         const handleClickOutside = (event) => {
@@ -26,12 +34,14 @@ export default function SearchableItemDropdown({ items, onItemSelected, onClear 
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
 
+    const displayValue = query || (selectedItem ? selectedItem.name : '');
+
     return (
         <div className="relative w-full" ref={dropdownRef}>
             <input
                 type="text"
-                value={query}
-                onChange={(e) => { setQuery(e.target.value); onClear(); }}
+                value={displayValue}
+                onChange={handleChange}
                 onFocus={() => setIsOpen(true)}
                 placeholder="Search and select an item..."
                 className="w-full px-3 py-2 border rounded-md"
