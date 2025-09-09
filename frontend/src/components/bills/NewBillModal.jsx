@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import SearchableItemDropdown from './SearchableItemDropdown';
+import CustomDropdown from '../common/CustomDropdown';
 
 export default function NewBillModal({ open, onClose, onCreated }) {
     const [customerName, setCustomerName] = useState('');
@@ -9,6 +10,12 @@ export default function NewBillModal({ open, onClose, onCreated }) {
     const [priceType, setPriceType] = useState('retail_price');
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
+
+    const priceTypeOptions = [
+        { label: 'Retail', value: 'retail_price' },
+        { label: 'Wholesale', value: 'wholesale_price' },
+        { label: 'Cost Price', value: 'cost_price' },
+    ];
 
     const fetchItems = useCallback(async () => {
         try {
@@ -99,12 +106,14 @@ export default function NewBillModal({ open, onClose, onCreated }) {
                     <div className="w-full">
                         <div className="flex flex-col sm:flex-row justify-between sm:items-center mb-2 gap-2">
                             <h4 className="font-semibold">Bill Items</h4>
-                            <div className="flex items-center gap-2">
+                            <div className="relative flex items-center gap-2">
                                 <label className="text-xs sm:text-sm font-medium">Price Type:</label>
-                                <select value={priceType} onChange={e => setPriceType(e.target.value)} className="px-2 py-1 border rounded-md text-xs sm:text-sm">
-                                    <option value="retail_price">Retail</option>
-                                    <option value="wholesale_price">Wholesale</option>
-                                </select>
+                                <CustomDropdown
+                                    options={priceTypeOptions}
+                                    selectedOption={priceTypeOptions.find(option => option.value === priceType)}
+                                    onSelect={(option) => setPriceType(option.value)}
+                                    placeholder="Select Price Type"
+                                />
                             </div>
                         </div>
                         
