@@ -60,7 +60,7 @@ def create_session():
 
             user_id = user_record[0]
             stored_hash = user_record[1].encode('utf-8')
-            cur.execute("SELECT 1 FROM shop WHERE user_id = %s LIMIT 1;", (user_id,))
+            cur.execute("SELECT 1 FROM shop WHERE user_id = %s;", (user_id,))
             has_shop = cur.fetchone() is not None
             if not bcrypt.checkpw(password.encode('utf-8'), stored_hash):
                 return jsonify({"error": "Invalid password"}), 401
@@ -77,14 +77,11 @@ def create_session():
         # If we have a valid user_id (from either login or signup), create the token
         if user_id:
 
-            cur.execute("SELECT 1 FROM shop WHERE user_id = %s LIMIT 1;", (user_id,))
-            has_shop = cur.fetchone() is not None
-
             token = jwt.encode({
                 'user_id': user_id, # It's better to use the non-sensitive primary key (id) in the token
                 'exp': datetime.utcnow() + timedelta(days=365) # Shorter expiry is safer in real apps
             }, SECRET_KEY, algorithm="HS256")
-            return jsonify({"message": "Session created successfully", "token": token, "has_shop": has_shop}), 200
+            return jsonify({"message": "Session created successfully", "token": token,"has_shop": has_shop}), 200
         else:
             # This case should ideally not be reached if logic is correct
             return jsonify({"error": "Could not log in or create user"}), 500

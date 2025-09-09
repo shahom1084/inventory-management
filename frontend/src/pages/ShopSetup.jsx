@@ -36,7 +36,6 @@ export default function ShopSetup({ onShopCreated }) {
             }
             
             // Persist hasShop and switch to home so user stays logged in to their state
-            localStorage.setItem('hasShop', JSON.stringify(true));
             onShopCreated();
 
         } catch (err) {

@@ -6,7 +6,7 @@ import LoaderCircleIcon from '../../components/icons/LoaderCircleIcon';
 export default function LoginSignUpComponent({ onOtpSent, setPhoneNumber, phoneNumber }) {
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
-    const [userExists, setUserExists] = useState(null); // null, true, or false
+    const [userExists, setUserExists] = useState(null);
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
     const [checkingUser, setCheckingUser] = useState(false);
@@ -14,6 +14,7 @@ export default function LoginSignUpComponent({ onOtpSent, setPhoneNumber, phoneN
     const debounceTimeout = useRef(null);
 
     const checkUserExists = useCallback(async (number) => {
+        console.log('checkUserExists called with number:', number);
         setCheckingUser(true);
         setUserExists(null);
         setError('');
@@ -23,25 +24,29 @@ export default function LoginSignUpComponent({ onOtpSent, setPhoneNumber, phoneN
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ phoneNumber: number })
             });
+            console.log('check-user response:', response);
             if (!response.ok) {
                 const errorData = await response.json();
                 throw new Error(errorData.error || 'Network response was not ok');
             }
             const data = await response.json();
+            console.log('check-user data:', data);
             setUserExists(data.exists);
+            return data.exists;
         } catch (err) {
+            console.error('Error in checkUserExists:', err);
             setError(err.message || 'Could not verify phone number. Please try again.');
-            console.error(err);
+            return null;
         } finally {
             setCheckingUser(false);
         }
     }, []);
 
     const handlePhoneChange = (e) => {
-        const value = e.target.value.replace(/\D/g, ''); // Allow only digits
+        const value = e.target.value.replace(/\D/g, '');
         if (value.length <= 10) {
             setPhoneNumber(value);
-            setUserExists(null); // Reset when user types
+            setUserExists(null);
             setError('');
             
             if (debounceTimeout.current) {
@@ -56,12 +61,13 @@ export default function LoginSignUpComponent({ onOtpSent, setPhoneNumber, phoneN
         }
     };
 
-    const validateForm = () => {
+    const validateForm = (currentUserExists) => {
+        console.log('validateForm called with currentUserExists:', currentUserExists);
         if (password.length < 8) {
             setError('Password must be at least 8 characters long.');
             return false;
         }
-        if (userExists === false && password !== confirmPassword) {
+        if (currentUserExists === false && password !== confirmPassword) {
             setError('Passwords do not match.');
             return false;
         }
@@ -71,16 +77,28 @@ export default function LoginSignUpComponent({ onOtpSent, setPhoneNumber, phoneN
     
     const handleSubmit = async (e) => {
         e.preventDefault();
-        if (!validateForm()) return;
-
+        console.log('handleSubmit called');
         setLoading(true);
         setError('');
 
-        setTimeout(() => {
-            console.log("Simulating OTP sent. Verification will happen on the backend.");
-            onOtpSent(password);
+        try {
+            console.log('userExists before checkUserExists:', userExists);
+            let currentUserExists = userExists;
+            if (userExists === null) {
+                currentUserExists = await checkUserExists(phoneNumber);
+                console.log('currentUserExists after await checkUserExists:', currentUserExists);
+            }
+
+            if (validateForm(currentUserExists)) {
+                console.log('Form validated. Calling onOtpSent.');
+                onOtpSent(password);
+            }
+        } catch (err) {
+            console.error('Error in handleSubmit:', err);
+            setError(err.message || 'An unexpected error occurred.');
+        } finally {
             setLoading(false);
-        }, 1000);
+        }
     };
 
     const isLoginFlow = userExists === true;
@@ -118,7 +136,7 @@ export default function LoginSignUpComponent({ onOtpSent, setPhoneNumber, phoneN
                         { (isLoginFlow || isSignupFlow) && (
                             <div className="space-y-4 pt-2">
                                <p className="text-center text-sm font-medium text-indigo-600">
-                                    {isLoginFlow ? 'Welcome back! Please enter your password.' : 'Looks like you\'re new! Create a password.'}
+                                    {isLoginFlow ? 'Welcome back! Please enter your password.' : "Looks like you're new! Create a password."}
                                 </p>
                                 <div className="relative">
                                     <span className="absolute inset-y-0 left-0 flex items-center pl-3">

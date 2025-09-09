@@ -1,6 +1,6 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 
-const ShopContext = createContext({ shopName: '', initials: 'SN', loading: true, error: '', refreshShop: () => {} });
+const ShopContext = createContext({ shopName: '', initials: 'SN', loading: true, error: '', refreshShop: () => {}, clearShop: () => {} });
 
 const getInitials = (name) => {
     if (!name || typeof name !== 'string') return 'SN';
@@ -41,6 +41,12 @@ export function ShopProvider({ children }) {
         }
     }, []);
 
+    const clearShop = useCallback(() => {
+        setShopName('');
+        setError('');
+        setLoading(false);
+    }, []);
+
     useEffect(() => { fetchShop(); }, [fetchShop]);
 
     const value = useMemo(() => ({
@@ -49,7 +55,8 @@ export function ShopProvider({ children }) {
         loading,
         error,
         refreshShop: fetchShop,
-    }), [shopName, loading, error, fetchShop]);
+        clearShop,
+    }), [shopName, loading, error, fetchShop, clearShop]);
 
     return (
         <ShopContext.Provider value={value}>{children}</ShopContext.Provider>

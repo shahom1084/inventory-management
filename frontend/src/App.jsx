@@ -1,70 +1,105 @@
-// frontend/src/App.jsx
-
 import React, { useEffect, useState } from 'react';
 import LoginSignUpComponent from './features/auth/LoginSignUp';
 import OtpComponent from './features/auth/OtpComponent';
 import HomeComponent from './pages/HomeComponent';
-import ShopSetup from './pages/ShopSetup'; // <-- IMPORT new component
+import ShopSetup from './pages/ShopSetup';
 import ItemsPage from './pages/Items';
+import { useShop } from './context/ShopContext';
 
 export default function App() {
-    // 'login', 'otp', 'shop_setup', 'home', 'items'
-    const [view, setView] = useState('login'); 
+    const [view, setView] = useState('login');
     const [phoneNumber, setPhoneNumber] = useState('');
     const [password, setPassword] = useState('');
+    const [hasShop, setHasShop] = useState(null);
+    const { clearShop, refreshShop } = useShop();
 
     const navigate = (v) => {
+        console.log('navigate called with view:', v);
         setView(v);
-        // simple hash-based routing so direct links work
         const map = { home: '#/home', items: '#/items', shop_setup: '#/shop-setup', login: '#/login', otp: '#/otp' };
         window.location.hash = map[v] || '#/home';
+        console.log('window.location.hash set to:', window.location.hash);
     };
 
     const handleOtpSent = (pass) => {
+        console.log('handleOtpSent called');
         setPassword(pass);
         navigate('otp');
     };
 
-    // MODIFIED to handle the response from the backend
     const handleVerification = (data) => {
-        // Store the token in localStorage for future API calls
+        console.log('handleVerification called with data:', data);
         localStorage.setItem('authToken', data.token);
-        // Always go to home; HomeComponent will check if a shop exists and redirect if needed
-        navigate('home');
+        setHasShop(data.has_shop);
+        if (data.has_shop) {
+            refreshShop();
+            navigate('home');
+        } else {
+            navigate('shop_setup');
+        }
     };
-    
-    // NEW function to switch view after shop is created
+
     const handleShopCreated = () => {
+        console.log('handleShopCreated called');
+        setHasShop(true);
+        refreshShop();
         navigate('home');
     };
 
-    // NEW: explicit logout handler
     const handleLogout = () => {
-        try {
-            localStorage.removeItem('authToken');
-        } catch (e) {}
-        navigate('login');
+        console.log('handleLogout called');
+        localStorage.removeItem('authToken');
+        clearShop();
+        setHasShop(null);
+        window.location.hash = '#/login';
     };
 
-    // Keep user logged in on this device by restoring session on app load + handle hash changes
     useEffect(() => {
-        const token = localStorage.getItem('authToken');
+        console.log('useEffect (routing) called. Current view:', view, 'Current hash:', window.location.hash);
         const applyHashRoute = () => {
+            console.log('applyHashRoute called');
+            const token = localStorage.getItem('authToken');
             const h = (window.location.hash || '').toLowerCase();
+            console.log('Token:', token, 'Hash:', h);
+            
+            // Allow OTP page even without token
+            if (h.includes('#/otp')) {
+                console.log('Hash includes #/otp, setting view to otp');
+                return setView('otp');
+            }
+
             if (!token) {
+                console.log('No token, setting view to login');
                 setView('login');
                 return;
             }
-            if (h.includes('#/items')) return setView('items');
-            if (h.includes('#/shop-setup')) return setView('shop_setup');
-            return setView('home');
+            
+            if (hasShop === false) {
+                console.log('hasShop is false, setting view to shop_setup');
+                setView('shop_setup');
+                return;
+            }
+
+            if (h.includes('#/items')) {
+                console.log('Hash includes #/items, setting view to items');
+                return setView('items');
+            }
+            if (h.includes('#/shop-setup')) {
+                console.log('Hash includes #/shop-setup, setting view to shop_setup');
+                return setView('shop_setup');
+            }
+            
+            console.log('Defaulting to home view');
+            setView('home');
         };
+
         applyHashRoute();
         window.addEventListener('hashchange', applyHashRoute);
         return () => window.removeEventListener('hashchange', applyHashRoute);
-    }, []);
+    }, [hasShop, view]); // Added view to dependency array
 
     const renderView = () => {
+        console.log('renderView called. Rendering view:', view);
         switch (view) {
             case 'otp':
                 return <OtpComponent 
