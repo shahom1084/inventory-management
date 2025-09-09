@@ -1,0 +1,152 @@
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import SearchableItemDropdown from './SearchableItemDropdown';
+
+export default function NewBillModal({ open, onClose, onCreated }) {
+    const [customerName, setCustomerName] = useState('');
+    const [customerPhone, setCustomerPhone] = useState('');
+    const [billItems, setBillItems] = useState([{ id: 1, item: null, quantity: 1 }]);
+    const [allItems, setAllItems] = useState([]);
+    const [priceType, setPriceType] = useState('retail_price');
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState('');
+
+    const fetchItems = useCallback(async () => {
+        try {
+            const token = localStorage.getItem('authToken');
+            const res = await fetch('/api/items', { headers: { 'Authorization': `Bearer ${token}` } });
+            const data = await res.json();
+            if (res.ok) {
+                setAllItems(data.items || []);
+            } else {
+                throw new Error(data.error || 'Failed to fetch items');
+            }
+        } catch (e) {
+            setError(e.message);
+        }
+    }, []);
+
+    useEffect(() => {
+        if (open) {
+            fetchItems();
+        }
+    }, [open, fetchItems]);
+
+    const handleItemChange = (rowId, selectedItem) => {
+        setBillItems(billItems.map(row => row.id === rowId ? { ...row, item: selectedItem } : row));
+    };
+
+    const handleQuantityChange = (rowId, quantity) => {
+        const numQuantity = Math.max(0, Number(quantity));
+        setBillItems(billItems.map(row => row.id === rowId ? { ...row, quantity: numQuantity } : row));
+    };
+
+    const addNewRow = () => {
+        setBillItems([...billItems, { id: Date.now(), item: null, quantity: 1 }]);
+    };
+
+    const removeRow = (rowId) => {
+        setBillItems(billItems.filter(row => row.id !== rowId));
+    };
+
+    const totalAmount = useMemo(() => {
+        return billItems.reduce((acc, row) => {
+            if (!row.item) return acc;
+            const price = parseFloat(row.item[priceType]) || 0;
+            return acc + (price * row.quantity);
+        }, 0);
+    }, [billItems, priceType]);
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        // Placeholder for bill creation logic
+        alert('Creating bill...');
+        onClose();
+    };
+
+    if (!open) return null;
+
+    return (
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex justify-center items-center p-2 sm:p-4">
+            <form id="bill-form" onSubmit={handleSubmit} className="bg-white rounded-lg shadow-xl p-4 sm:p-6 w-full max-w-md md:max-w-2xl lg:max-w-4xl max-h-[90vh] flex flex-col">
+                <h3 className="text-lg md:text-xl font-semibold text-slate-800 mb-4">Create New Bill</h3>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                    <input type="text" placeholder="Customer Name" value={customerName} onChange={e => setCustomerName(e.target.value)} className="w-full px-3 py-2 border rounded-md text-sm" />
+                    <input type="text" placeholder="Customer Phone" value={customerPhone} onChange={e => setCustomerPhone(e.target.value)} className="w-full px-3 py-2 border rounded-md text-sm" />
+                </div>
+
+                <div className="flex-grow overflow-y-auto border-t border-b py-2">
+                    <div className="w-full">
+                        <div className="flex flex-col sm:flex-row justify-between sm:items-center mb-2 gap-2">
+                            <h4 className="font-semibold">Bill Items</h4>
+                            <div className="flex items-center gap-2">
+                                <label className="text-xs sm:text-sm font-medium">Price Type:</label>
+                                <select value={priceType} onChange={e => setPriceType(e.target.value)} className="px-2 py-1 border rounded-md text-xs sm:text-sm">
+                                    <option value="retail_price">Retail</option>
+                                    <option value="wholesale_price">Wholesale</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div className="w-full overflow-x-auto">
+                            <table className="min-w-full text-left text-xs sm:text-sm">
+                                <thead className="bg-slate-50 text-slate-600 sticky top-0">
+                                    <tr>
+                                        <th className="px-2 py-2 font-medium w-2/5">Item</th>
+                                        <th className="px-2 py-2 font-medium">Price</th>
+                                        <th className="px-2 py-2 font-medium">Qty</th>
+                                        <th className="px-2 py-2 font-medium">Total</th>
+                                        <th className="px-2 py-2 font-medium"></th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {billItems.map((row, index) => {
+                                        const price = row.item ? parseFloat(row.item[priceType]) || 0 : 0;
+                                        const total = price * row.quantity;
+                                        return (
+                                            <tr key={row.id} className="border-t">
+                                                <td className="px-1 py-1 align-top">
+                                                    <SearchableItemDropdown 
+                                                        items={allItems} 
+                                                        onItemSelected={(item) => handleItemChange(row.id, item)}
+                                                        onClear={() => handleItemChange(row.id, null)}
+                                                    />
+                                                </td>
+                                                <td className="px-2 py-2 align-top">₹{price.toFixed(2)}</td>
+                                                <td className="px-1 py-1 align-top">
+                                                    <input 
+                                                        type="number" 
+                                                        value={row.quantity} 
+                                                        onChange={(e) => handleQuantityChange(row.id, e.target.value)} 
+                                                        className="w-16 text-center border rounded-md p-1"
+                                                    />
+                                                </td>
+                                                <td className="px-2 py-2 align-top">₹{total.toFixed(2)}</td>
+                                                <td className="px-1 py-1 align-top">
+                                                    <button type="button" onClick={() => removeRow(row.id)} className="text-red-500 hover:text-red-700 font-bold text-lg">
+                                                        &times;
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        );
+                                    })}
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <button type="button" onClick={addNewRow} className="mt-3 text-sm text-amber-600 hover:text-amber-800 font-semibold">+ Add another item</button>
+                    </div>
+                </div>
+
+                <div className="mt-4 text-right">
+                    <h4 className="text-xl md:text-2xl font-bold">Total: ₹{totalAmount.toFixed(2)}</h4>
+                </div>
+
+                <div className="flex justify-end gap-3 mt-4 pt-4 border-t">
+                    <button type="button" onClick={onClose} className="px-4 py-2 rounded-md bg-gray-200 hover:bg-gray-300 text-sm font-semibold">Cancel</button>
+                    <button type="submit" form="bill-form" className="px-6 py-2 rounded-md bg-amber-500 hover:bg-amber-600 text-white text-sm font-semibold">Save Bill</button>
+                </div>
+            </form>
+        </div>
+    );
+}

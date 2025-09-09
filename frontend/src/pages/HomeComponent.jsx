@@ -4,9 +4,9 @@ import { useShop } from '../context/ShopContext.jsx';
 export default function HomeComponent({ onLogout }) {
     const { shopName, initials } = useShop();
 
-    const gotoItems = (e) => {
+    const goto = (e, path) => {
         e.preventDefault();
-        window.location.hash = '#/items';
+        window.location.hash = path;
     };
 
     return (
@@ -22,9 +22,9 @@ export default function HomeComponent({ onLogout }) {
                         <span className="font-semibold tracking-wide">{shopName || 'Shop Name'}</span>
                     </div>
                     <nav className="hidden md:flex items-center gap-6 text-sm">
-                        <a className="hover:text-white/90 text-slate-300" href="#">Home</a>
-                        <a className="hover:text-white/90 text-slate-300" href="#" onClick={gotoItems}>Items</a>
-                        <a className="hover:text-white/90 text-slate-300" href="#">Bills</a>
+                        <a className="hover:text-white/90 text-slate-300" href="#/home" onClick={(e) => goto(e, '#/home')}>Home</a>
+                        <a className="hover:text-white/90 text-slate-300" href="#/items" onClick={(e) => goto(e, '#/items')}>Items</a>
+                        <a className="hover:text-white/90 text-slate-300" href="#/bills" onClick={(e) => goto(e, '#/bills')}>Bills</a>
                         <a className="hover:text-white/90 text-slate-300" href="#">Ledger</a>
                     </nav>
                     <div className="flex items-center gap-2">
@@ -42,16 +42,16 @@ export default function HomeComponent({ onLogout }) {
             <main className="w-full px-4 sm:px-6 lg:px-10 py-8 lg:py-10">
                 {/* Quick Nav for small screens */}
                 <div className="md:hidden mb-5 flex flex-wrap items-center gap-3 text-sm">
-                    <span className="px-3 py-1 rounded-full bg-white shadow text-slate-700">Home</span>
-                    <span className="px-3 py-1 rounded-full bg-white shadow text-slate-500">Items</span>
-                    <span className="px-3 py-1 rounded-full bg-white shadow text-slate-500">Bills</span>
+                    <a href="#/home" onClick={(e) => goto(e, '#/home')} className="px-3 py-1 rounded-full bg-white shadow text-slate-700">Home</a>
+                    <a href="#/items" onClick={(e) => goto(e, '#/items')} className="px-3 py-1 rounded-full bg-white shadow text-slate-500">Items</a>
+                    <a href="#/bills" onClick={(e) => goto(e, '#/bills')} className="px-3 py-1 rounded-full bg-white shadow text-slate-500">Bills</a>
                     <span className="px-3 py-1 rounded-full bg-white shadow text-slate-500">Ledger</span>
                 </div>
 
                 {/* Dashboard Grid */}
                 <div className="grid gap-5 lg:gap-7 grid-cols-1 sm:grid-cols-2 [grid-template-columns:repeat(auto-fit,minmax(280px,1fr))]">
                     {/* Card: Items */}
-                    <button onClick={gotoItems} className="text-left bg-white rounded-2xl shadow p-6 flex items-center gap-5 border border-slate-100 min-h-[160px] hover:shadow-md transition-shadow">
+                    <button onClick={(e) => goto(e, '#/items')} className="text-left bg-white rounded-2xl shadow p-6 flex items-center gap-5 border border-slate-100 min-h-[160px] hover:shadow-md transition-shadow">
                         <div className="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
                             <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M20 13V7a2 2 0 00-2-2h-4m-4 0H6a2 2 0 00-2 2v6m0 0v4a2 2 0 002 2h4m8-6v4a2 2 0 01-2 2h-4M9 7h.01M9 11h.01M13 7h.01M13 11h.01" />
@@ -79,7 +79,7 @@ export default function HomeComponent({ onLogout }) {
                     </div>
 
                     {/* Card: Bills */}
-                    <div className="bg-white rounded-2xl shadow p-6 flex items-center gap-5 border border-slate-100 min-h-[160px]">
+                    <button onClick={(e) => goto(e, '#/bills')} className="text-left bg-white rounded-2xl shadow p-6 flex items-center gap-5 border border-slate-100 min-h-[160px] hover:shadow-md transition-shadow">
                         <div className="w-12 h-12 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center shrink-0">
                             <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M9 14l2 2 4-4m-7 6h8a2 2 0 002-2V7a2 2 0 00-2-2h-5l-2-2H7a2 2 0 00-2 2v3" />
@@ -90,7 +90,7 @@ export default function HomeComponent({ onLogout }) {
                             <p className="text-xs text-slate-500">Create & manage invoices</p>
                             <p className="mt-2 text-sm text-rose-600 font-semibold">0 Total Bills</p>
                         </div>
-                    </div>
+                    </button>
 
                     {/* Card: Ledger */}
                     <div className="bg-white rounded-2xl shadow p-6 flex items-center gap-5 border border-slate-100 min-h-[160px]">
