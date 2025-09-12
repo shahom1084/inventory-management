@@ -3,6 +3,19 @@ import { useShop } from '../context/ShopContext';
 import NewBillModal from '../components/bills/NewBillModal';
 // import ConfirmationModal from '../components/common/ConfirmationModal';
 
+function StatusPill({ status }) {
+    const statusStyles = {
+        paid: 'bg-green-100 text-green-800',
+        unpaid: 'bg-red-100 text-red-800',
+        partial: 'bg-yellow-100 text-yellow-800',
+    };
+    return (
+        <span className={`px-2 py-1 rounded-full text-xs font-medium ${statusStyles[status] || 'bg-slate-100 text-slate-800'}`}>
+            {status}
+        </span>
+    );
+}
+
 function HeaderBar({ onNewBill }) {
     const { initials } = useShop();
     return (
@@ -54,21 +67,22 @@ function BillsTable({ bills, onView, onDelete, loading, error }) {
                         <th className="px-4 py-3 font-medium">Customer ID</th>
                         <th className="px-4 py-3 font-medium">Date</th>
                         <th className="px-4 py-3 font-medium">Amount</th>
+                        <th className="px-4 py-3 font-medium">Status</th>
                         <th className="px-4 py-3 font-medium text-right">Actions</th>
                     </tr>
                 </thead>
                 <tbody>
                     {loading ? (
                         <tr>
-                            <td className="px-4 py-6 text-center text-slate-500" colSpan={5}>Loading...</td>
+                            <td className="px-4 py-6 text-center text-slate-500" colSpan={6}>Loading...</td>
                         </tr>
                     ) : error ? (
                         <tr>
-                            <td className="px-4 py-6 text-center text-red-500" colSpan={5}>{error}</td>
+                            <td className="px-4 py-6 text-center text-red-500" colSpan={6}>{error}</td>
                         </tr>
                     ) : bills.length === 0 ? (
                         <tr>
-                            <td className="px-4 py-6 text-center text-slate-500" colSpan={5}>No bills found</td>
+                            <td className="px-4 py-6 text-center text-slate-500" colSpan={6}>No bills found</td>
                         </tr>
                     ) : (
                         bills.map((bill) => (
@@ -77,6 +91,9 @@ function BillsTable({ bills, onView, onDelete, loading, error }) {
                                 <td className="px-4 py-3 text-slate-700">{bill.customer_id}</td>
                                 <td className="px-4 py-3 text-slate-700">{new Date(bill.createdAt).toLocaleDateString()}</td>
                                 <td className="px-4 py-3 text-slate-800 font-semibold">₹{bill.totalAmount.toFixed(2)}</td>
+                                <td className="px-4 py-3">
+                                    <StatusPill status={bill.status} />
+                                </td>
                                 <td className="px-4 py-3">
                                     <div className="w-full flex justify-end gap-2">
                                         <button onClick={() => onDelete(bill.id)} className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md border border-red-200 bg-red-50 hover:bg-red-100 text-red-600 text-xs font-semibold">
@@ -114,13 +131,16 @@ function BillsCards({ bills, onView, onDelete, loading, error }) {
                             <p className="text-xs text-slate-500">{new Date(bill.createdAt).toLocaleDateString()}</p>
                         </div>
                     </div>
-                    <div className="mt-3 flex items-center justify-end gap-2 text-sm">
-                        <button onClick={() => onDelete(bill.id)} className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md border border-red-200 bg-red-50 hover:bg-red-100 text-red-600 text-xs font-semibold">
-                            Delete
-                        </button>
-                        <button onClick={() => onView(bill)} className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md border border-slate-200 bg-white hover:bg-slate-100 text-xs font-semibold">
-                            View
-                        </button>
+                    <div className="mt-3 flex items-center justify-between">
+                        <StatusPill status={bill.status} />
+                        <div className="flex items-center gap-2 text-sm">
+                            <button onClick={() => onDelete(bill.id)} className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md border border-red-200 bg-red-50 hover:bg-red-100 text-red-600 text-xs font-semibold">
+                                Delete
+                            </button>
+                            <button onClick={() => onView(bill)} className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md border border-slate-200 bg-white hover:bg-slate-100 text-xs font-semibold">
+                                View
+                            </button>
+                        </div>
                     </div>
                 </div>
             ))}

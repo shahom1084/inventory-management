@@ -5,6 +5,8 @@ import CustomDropdown from '../common/CustomDropdown';
 export default function NewBillModal({ open, onClose, onCreated }) {
     const [customerName, setCustomerName] = useState('');
     const [customerPhone, setCustomerPhone] = useState('');
+    const [status, setStatus] = useState('unpaid');
+    const [amountPaid, setAmountPaid] = useState(0);
     const [billItems, setBillItems] = useState([{ id: 1, item: null, quantity: 1, price: 0 }]);
     const [allItems, setAllItems] = useState([]);
     const [priceType, setPriceType] = useState('retail_price');
@@ -15,6 +17,13 @@ export default function NewBillModal({ open, onClose, onCreated }) {
         { label: 'Retail', value: 'retail_price' },
         { label: 'Wholesale', value: 'wholesale_price' },
         { label: 'Cost Price', value: 'cost_price' },
+        { label: 'Customer Specific', value: 'customer_specific' },
+    ];
+
+    const statusOptions = [
+        { label: 'Unpaid', value: 'unpaid' },
+        { label: 'Paid', value: 'paid' },
+        { label: 'Partial', value: 'partial' },
     ];
 
     const fetchItems = useCallback(async () => {
@@ -32,16 +41,58 @@ export default function NewBillModal({ open, onClose, onCreated }) {
         }
     }, []);
 
+    const fetchCustomerPrices = async (phoneNumber) => {
+        try {
+            const token = localStorage.getItem('authToken');
+            const res = await fetch(`/api/customer-prices?phone_number=${phoneNumber}`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const data = await res.json();
+            if (res.ok) {
+                if (data.customer_items && data.customer_items.length > 0) {
+                    const itemsWithCustomPrices = data.items.map(item => {
+                        const customerItem = data.customer_items.find(ci => ci.id === item.id);
+                        if (customerItem) {
+                            return { ...item, custom_price: customerItem.custom_price };
+                        }
+                        return item;
+                    });
+                    setAllItems(itemsWithCustomPrices);
+                    setPriceType('customer_specific');
+                } else {
+                    setAllItems(data.items);
+                }
+            } else {
+                throw new Error(data.error || 'Failed to fetch customer prices');
+            }
+        } catch (e) {
+            setError(e.message);
+        }
+    };
+
     useEffect(() => {
         if (open) {
             fetchItems();
         }
     }, [open, fetchItems]);
 
+    useEffect(() => {
+        if (customerPhone.length === 10) {
+            fetchCustomerPrices(customerPhone);
+        }
+    }, [customerPhone]);
+
     const handleItemChange = (rowId, selectedItem) => {
         setBillItems(billItems.map(row => {
             if (row.id === rowId) {
-                const price = selectedItem ? parseFloat(selectedItem[priceType]) || 0 : 0;
+                let price = 0;
+                if (selectedItem) {
+                    if (priceType === 'customer_specific' && selectedItem.custom_price) {
+                        price = parseFloat(selectedItem.custom_price);
+                    } else {
+                        price = parseFloat(selectedItem[priceType]) || 0;
+                    }
+                }
                 return { ...row, item: selectedItem, price: price };
             }
             return row;
@@ -72,18 +123,57 @@ export default function NewBillModal({ open, onClose, onCreated }) {
         }, 0);
     }, [billItems]);
 
+    const amountRemaining = totalAmount - amountPaid;
+
     const handleSubmit = async (e) => {
         e.preventDefault();
-        // Placeholder for bill creation logic
-        alert('Creating bill...');
-        onClose();
+        setLoading(true);
+        setError('');
+
+        const billData = {
+            customerName,
+            customerPhone,
+            billItems,
+            totalAmount,
+            status,
+            amountPaid: status === 'partial' ? amountPaid : undefined,
+        };
+
+        try {
+            const token = localStorage.getItem('authToken');
+            const res = await fetch('/api/bills', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`,
+                },
+                body: JSON.stringify(billData),
+            });
+
+            const data = await res.json();
+
+            if (!res.ok) {
+                throw new Error(data.error || 'Failed to create bill');
+            }
+
+            onCreated();
+            onClose();
+        } catch (e) {
+            setError(e.message);
+        } finally {
+            setLoading(false);
+        }
     };
 
     useEffect(() => {
-        // Update prices if priceType changes
         setBillItems(currentItems => currentItems.map(row => {
             if (row.item) {
-                const newPrice = parseFloat(row.item[priceType]) || 0;
+                let newPrice = 0;
+                if (priceType === 'customer_specific' && row.item.custom_price) {
+                    newPrice = parseFloat(row.item.custom_price);
+                } else {
+                    newPrice = parseFloat(row.item[priceType]) || 0;
+                }
                 return { ...row, price: newPrice };
             }
             return row;
@@ -97,9 +187,17 @@ export default function NewBillModal({ open, onClose, onCreated }) {
             <form id="bill-form" onSubmit={handleSubmit} className="bg-white rounded-lg shadow-xl p-4 sm:p-6 w-full max-w-md md:max-w-2xl lg:max-w-4xl max-h-[90vh] flex flex-col">
                 <h3 className="text-lg md:text-xl font-semibold text-slate-800 mb-4">Create New Bill</h3>
                 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                {error && <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" role="alert">{error}</div>}
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
                     <input type="text" placeholder="Customer Name" value={customerName} onChange={e => setCustomerName(e.target.value)} className="w-full px-3 py-2 border rounded-md text-sm" />
                     <input type="text" placeholder="Customer Phone" value={customerPhone} onChange={e => setCustomerPhone(e.target.value)} className="w-full px-3 py-2 border rounded-md text-sm" />
+                    <CustomDropdown
+                        options={statusOptions}
+                        selectedOption={statusOptions.find(option => option.value === status)}
+                        onSelect={(option) => setStatus(option.value)}
+                        placeholder="Select Status"
+                    />
                 </div>
 
                 <div className="flex-grow border-t border-b py-2">
@@ -181,11 +279,37 @@ export default function NewBillModal({ open, onClose, onCreated }) {
 
                 <div className="mt-4 text-right">
                     <h4 className="text-xl md:text-2xl font-bold">Total: ₹{totalAmount.toFixed(2)}</h4>
+                    {status === 'partial' && (
+                        <div className="flex justify-end items-center gap-4 mt-2">
+                            <div className="flex items-center gap-2">
+                                <label htmlFor="amountPaid" className="text-sm font-medium">Amount Paid:</label>
+                                <input
+                                    type="number"
+                                    id="amountPaid"
+                                    value={amountPaid}
+                                    onChange={(e) => setAmountPaid(Number(e.target.value))}
+                                    className="w-24 border rounded-md p-1 text-right"
+                                />
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <label htmlFor="amountRemaining" className="text-sm font-medium">Amount Remaining:</label>
+                                <input
+                                    type="text"
+                                    id="amountRemaining"
+                                    value={`₹${amountRemaining.toFixed(2)}`}
+                                    readOnly
+                                    className="w-24 border rounded-md p-1 text-right bg-slate-100"
+                                />
+                            </div>
+                        </div>
+                    )}
                 </div>
 
                 <div className="flex justify-end gap-3 mt-4 pt-4 border-t">
-                    <button type="button" onClick={onClose} className="px-4 py-2 rounded-md bg-gray-200 hover:bg-gray-300 text-sm font-semibold">Cancel</button>
-                    <button type="submit" form="bill-form" className="px-6 py-2 rounded-md bg-amber-500 hover:bg-amber-600 text-white text-sm font-semibold">Save Bill</button>
+                    <button type="button" onClick={onClose} className="px-4 py-2 rounded-md bg-gray-200 hover:bg-gray-300 text-sm font-semibold" disabled={loading}>Cancel</button>
+                    <button type="submit" form="bill-form" className="px-6 py-2 rounded-md bg-amber-500 hover:bg-amber-600 text-white text-sm font-semibold" disabled={loading}>
+                        {loading ? 'Saving...' : 'Save Bill'}
+                    </button>
                 </div>
             </form>
         </div>
