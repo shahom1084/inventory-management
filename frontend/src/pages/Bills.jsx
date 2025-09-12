@@ -64,7 +64,7 @@ function BillsTable({ bills, onView, onDelete, loading, error }) {
                 <thead className="sticky top-0 bg-slate-50 text-slate-600">
                     <tr>
                         <th className="px-4 py-3 font-medium">Bill ID</th>
-                        <th className="px-4 py-3 font-medium">Customer ID</th>
+                        <th className="px-4 py-3 font-medium">Customer Name</th>
                         <th className="px-4 py-3 font-medium">Date</th>
                         <th className="px-4 py-3 font-medium">Amount</th>
                         <th className="px-4 py-3 font-medium">Status</th>
@@ -89,7 +89,7 @@ function BillsTable({ bills, onView, onDelete, loading, error }) {
                         bills.map((bill) => (
                             <tr key={bill.id} className="border-t border-slate-100 hover:bg-slate-50">
                                 <td className="px-4 py-3 text-slate-800 font-medium">#{bill.id.slice(0, 8)}...</td>
-                                <td className="px-4 py-3 text-slate-700">{bill.customer_id}</td>
+                                <td className="px-4 py-3 text-slate-700">{bill.customer_name}</td>
                                 <td className="px-4 py-3 text-slate-700">{new Date(bill.createdAt).toLocaleDateString()}</td>
                                 <td className="px-4 py-3 text-slate-800 font-semibold">₹{bill.totalAmount.toFixed(2)}</td>
                                 <td className="px-4 py-3">
@@ -128,7 +128,7 @@ function BillsCards({ bills, onView, onDelete, loading, error }) {
                     <div className="flex items-start justify-between">
                         <div>
                             <h4 className="text-slate-800 font-semibold">Bill #{bill.id.slice(0, 8)}...</h4>
-                            <p className="text-xs text-slate-500 mt-0.5">Customer: {bill.customer_id}</p>
+                            <p className="text-xs text-slate-500 mt-0.5">Customer: {bill.customer_name}</p>
                         </div>
                         <div className="text-right">
                             <p className="text-slate-800 font-semibold">₹{bill.totalAmount.toFixed(2)}</p>
@@ -194,7 +194,7 @@ export default function BillsPage() {
         if (!q) return bills;
         return bills.filter((bill) =>
             bill.id.toLowerCase().includes(q) ||
-            bill.customer_id.toLowerCase().includes(q)
+            (bill.customer_name && bill.customer_name.toLowerCase().includes(q))
         );
     }, [bills, query]);
 

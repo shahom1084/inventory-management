@@ -18,17 +18,23 @@ def get_bills(current_user_id):
             return jsonify({"error": "No shop associated with this user.Please register your shop"}), 404
         
         shop_id = shop_record[0]
-        cur.execute("SELECT id, customer_id, total_amount, bill_date, status, amount_paid FROM bills WHERE shop_id = %s", (shop_id,))
+        cur.execute("""
+            SELECT b.id, b.customer_id, c.name, b.total_amount, b.bill_date, b.status, b.amount_paid 
+            FROM bills b
+            LEFT JOIN customers c ON b.customer_id = c.id
+            WHERE b.shop_id = %s
+        """, (shop_id,))
         bills = cur.fetchall()
         
         bills_list = [
             {
                 "id": bill[0], 
                 "customer_id": bill[1],
-                "totalAmount": float(bill[2]), 
-                "createdAt": bill[3].isoformat(), 
-                "status": bill[4],
-                "amountPaid": float(bill[5]) if bill[5] is not None else 0
+                "customer_name": bill[2] or "Walk-in",
+                "totalAmount": float(bill[3]), 
+                "createdAt": bill[4].isoformat(), 
+                "status": bill[5],
+                "amountPaid": float(bill[6]) if bill[6] is not None else 0
             }
             for bill in bills
         ]
