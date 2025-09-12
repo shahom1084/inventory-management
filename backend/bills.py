@@ -18,11 +18,18 @@ def get_bills(current_user_id):
             return jsonify({"error": "No shop associated with this user.Please register your shop"}), 404
         
         shop_id = shop_record[0]
-        cur.execute("SELECT id,customer_id,total_amount, bill_date FROM bills WHERE shop_id = %s", (shop_id,))
+        cur.execute("SELECT id, customer_id, total_amount, bill_date, status, amount_paid FROM bills WHERE shop_id = %s", (shop_id,))
         bills = cur.fetchall()
         
         bills_list = [
-            {"id": bill[0], "customer_id":bill[1],"totalAmount": float(bill[2]), "bill_date": bill[3].isoformat()}
+            {
+                "id": bill[0], 
+                "customer_id": bill[1],
+                "totalAmount": float(bill[2]), 
+                "createdAt": bill[3].isoformat(), 
+                "status": bill[4],
+                "amountPaid": float(bill[5]) if bill[5] is not None else 0
+            }
             for bill in bills
         ]
         
@@ -110,6 +117,22 @@ def create_new_bill(current_user_id):
     data = request.get_json()
     customer_name = data.get('customerName')
     customer_phone = data.get('customerPhone')
+    bill_items = data.get('billItems')
+    total_amount = data.get('totalAmount')
+    status = data.get('status')
+    amount_paid = data.get('amountPaid')
+
+    if not bill_items or not isinstance(bill_items, list) or len(bill_items) == 0:
+        return jsonify({"error": "At least one item is required to create a bill."} ), 400
+
+    # Handle amount_paid based on status
+    if status == 'paid':
+        amount_paid = total_amount
+    elif status == 'unpaid':
+        amount_paid = 0
+    elif status == 'partial':
+        if amount_paid is None:
+            amount_paid = total_amount 
 
     conn = get_db_connection()
     cur = conn.cursor()
@@ -117,7 +140,7 @@ def create_new_bill(current_user_id):
         cur.execute("SELECT id FROM shop WHERE user_id = %s;", (current_user_id,))
         shop_record = cur.fetchone()
         if not shop_record:
-            return jsonify({"error": "No shop associated with this user."}), 404
+            return jsonify({"error": "No shop associated with this user."} ), 404
         shop_id = shop_record[0]
 
         customer_id = None
@@ -140,11 +163,58 @@ def create_new_bill(current_user_id):
                     (customer_name, customer_phone, shop_id)
                 )
                 customer_id = cur.fetchone()[0]
-                conn.commit()
         
-        # For this step, just return the customer_id that was found or created.
-        # It will be None if no customer info was provided.
-        return jsonify({"message": "Customer step complete.", "customer_id": customer_id}), 200
+        # Insert into bills table
+        cur.execute(
+            """
+            INSERT INTO bills (shop_id, customer_id, total_amount, status, amount_paid) 
+            VALUES (%s, %s, %s, %s, %s) RETURNING id;
+            """,
+            (shop_id, customer_id, total_amount, status, amount_paid)
+        )
+        bill_id = cur.fetchone()[0]
+
+        # Insert into bill_items table
+        for item in bill_items:
+            item_id = item.get('item').get('id')
+            quantity = item.get('quantity')
+            price = item.get('price')
+
+            if not item_id or not quantity or price is None:
+                conn.rollback()
+                return jsonify({"error": "Each item must have item_id, quantity, and price."} ), 400
+
+            cur.execute(
+                """
+                INSERT INTO bill_items (bill_id, item_id, quantity, price_per_unit) 
+                VALUES (%s, %s, %s, %s);
+                """,
+                (bill_id, item_id, quantity, price)
+            )
+
+            # Save custom price if necessary
+            if customer_id:
+                cur.execute("SELECT retail_price, wholesale_price FROM items WHERE id = %s;", (item_id,))
+                item_prices = cur.fetchone()
+                if item_prices:
+                    retail_price, wholesale_price = item_prices
+                    # Using 'is not' for precise comparison with None
+                    is_standard_price = (price is not None and retail_price is not None and float(price) == float(retail_price)) or \
+                                        (price is not None and wholesale_price is not None and float(price) == float(wholesale_price))
+
+                    if not is_standard_price:
+                        # Upsert into customer_item_prices
+                        cur.execute(
+                            """
+                            INSERT INTO customer_item_prices (customer_id, item_id, custom_price)
+                            VALUES (%s, %s, %s)
+                            ON CONFLICT (customer_id, item_id) DO UPDATE SET custom_price = EXCLUDED.custom_price;
+                            """,
+                            (customer_id, item_id, price)
+                        )
+
+        conn.commit()
+        return jsonify({"message": "Bill created successfully", "bill_id": bill_id}), 201
 
     except Exception as e:
         conn.rollback()

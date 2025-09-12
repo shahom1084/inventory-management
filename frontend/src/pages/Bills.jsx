@@ -68,21 +68,22 @@ function BillsTable({ bills, onView, onDelete, loading, error }) {
                         <th className="px-4 py-3 font-medium">Date</th>
                         <th className="px-4 py-3 font-medium">Amount</th>
                         <th className="px-4 py-3 font-medium">Status</th>
+                        <th className="px-4 py-3 font-medium">Remaining</th>
                         <th className="px-4 py-3 font-medium text-right">Actions</th>
                     </tr>
                 </thead>
                 <tbody>
                     {loading ? (
                         <tr>
-                            <td className="px-4 py-6 text-center text-slate-500" colSpan={6}>Loading...</td>
+                            <td className="px-4 py-6 text-center text-slate-500" colSpan={7}>Loading...</td>
                         </tr>
                     ) : error ? (
                         <tr>
-                            <td className="px-4 py-6 text-center text-red-500" colSpan={6}>{error}</td>
+                            <td className="px-4 py-6 text-center text-red-500" colSpan={7}>{error}</td>
                         </tr>
                     ) : bills.length === 0 ? (
                         <tr>
-                            <td className="px-4 py-6 text-center text-slate-500" colSpan={6}>No bills found</td>
+                            <td className="px-4 py-6 text-center text-slate-500" colSpan={7}>No bills found</td>
                         </tr>
                     ) : (
                         bills.map((bill) => (
@@ -93,6 +94,9 @@ function BillsTable({ bills, onView, onDelete, loading, error }) {
                                 <td className="px-4 py-3 text-slate-800 font-semibold">₹{bill.totalAmount.toFixed(2)}</td>
                                 <td className="px-4 py-3">
                                     <StatusPill status={bill.status} />
+                                </td>
+                                <td className="px-4 py-3 text-slate-800 font-semibold">
+                                    {bill.status === 'partial' ? `₹${(bill.totalAmount - bill.amountPaid).toFixed(2)}` : '-'}
                                 </td>
                                 <td className="px-4 py-3">
                                     <div className="w-full flex justify-end gap-2">
@@ -133,6 +137,11 @@ function BillsCards({ bills, onView, onDelete, loading, error }) {
                     </div>
                     <div className="mt-3 flex items-center justify-between">
                         <StatusPill status={bill.status} />
+                        {bill.status === 'partial' && (
+                            <p className="text-xs text-slate-500">
+                                Remaining: <span className="font-semibold">₹{(bill.totalAmount - bill.amountPaid).toFixed(2)}</span>
+                            </p>
+                        )}
                         <div className="flex items-center gap-2 text-sm">
                             <button onClick={() => onDelete(bill.id)} className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md border border-red-200 bg-red-50 hover:bg-red-100 text-red-600 text-xs font-semibold">
                                 Delete

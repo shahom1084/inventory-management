@@ -5,7 +5,7 @@ import CustomDropdown from '../common/CustomDropdown';
 export default function NewBillModal({ open, onClose, onCreated }) {
     const [customerName, setCustomerName] = useState('');
     const [customerPhone, setCustomerPhone] = useState('');
-    const [status, setStatus] = useState('unpaid');
+    const [status, setStatus] = useState('paid');
     const [amountPaid, setAmountPaid] = useState(0);
     const [billItems, setBillItems] = useState([{ id: 1, item: null, quantity: 1, price: 0 }]);
     const [allItems, setAllItems] = useState([]);
