@@ -36,29 +36,13 @@ def get_bills(current_user_id):
 @bills_bp.route('/api/start-bills', methods=['POST','GET'])
 @token_required
 def create_bill(current_user_id):
-    data = request.get_json()
-    customer_phone = data.get('phoneNumber')
-    customer_name = data.get('name')
     conn = get_db_connection()
     cur = conn.cursor()
     try:
         cur.execute("SELECT id FROM shop WHERE user_id = %s;", (current_user_id,))
         shop_record = cur.fetchone()
         if not shop_record:
-            return jsonify({"error": "No shop associated with this user.Please register your shop"}), 404
-        
-        shop_id = shop_record[0]
-        
-        cur.execute("SELECT id FROM customers WHERE phone_number = %s AND shop_id = %s;", (customer_phone, shop_id))
-        customer_record = cur.fetchone()
-        
-        if not customer_record:
-            cur.execute("INSERT INTO customers (phone_number, shop_id,name) VALUES (%s, %s, %s) RETURNING id;", (customer_phone, shop_id,customer_name))
-            customer_id = cur.fetchone()[0]
-            conn.commit()
-        else:
-            customer_id = customer_record[0]
-        
+            return jsonify({"error": "No shop associated with this user.Please register your shop"}), 404  
         items = fetch_items(current_user_id)
         if isinstance(items, str):
             return jsonify({"error": items}), 404
@@ -116,6 +100,54 @@ def get_customer_prices(current_user_id):
         return jsonify({"items": all_items, "customer_items": customer_items}), 200
 
     except Exception as e:
+        return jsonify({"error": str(e)}), 500
+    finally:
+        cur.close()
+        conn.close()
+@bills_bp.route('/api/create-bill', methods=['POST'])
+@token_required
+def create_new_bill(current_user_id):
+    data = request.get_json()
+    customer_name = data.get('customerName')
+    customer_phone = data.get('customerPhone')
+
+    conn = get_db_connection()
+    cur = conn.cursor()
+    try:
+        cur.execute("SELECT id FROM shop WHERE user_id = %s;", (current_user_id,))
+        shop_record = cur.fetchone()
+        if not shop_record:
+            return jsonify({"error": "No shop associated with this user."}), 404
+        shop_id = shop_record[0]
+
+        customer_id = None
+        if customer_name or customer_phone:
+            if customer_phone:
+                cur.execute("SELECT id FROM customers WHERE phone_number = %s AND shop_id = %s;", (customer_phone, shop_id))
+                customer_record = cur.fetchone()
+                if customer_record:
+                    customer_id = customer_record[0]
+            
+            if not customer_id and customer_name:
+                cur.execute("SELECT id FROM customers WHERE name = %s AND shop_id = %s;", (customer_name, shop_id))
+                customer_record = cur.fetchone()
+                if customer_record:
+                    customer_id = customer_record[0]
+
+            if not customer_id:
+                cur.execute(
+                    "INSERT INTO customers (name, phone_number, shop_id) VALUES (%s, %s, %s) RETURNING id;",
+                    (customer_name, customer_phone, shop_id)
+                )
+                customer_id = cur.fetchone()[0]
+                conn.commit()
+        
+        # For this step, just return the customer_id that was found or created.
+        # It will be None if no customer info was provided.
+        return jsonify({"message": "Customer step complete.", "customer_id": customer_id}), 200
+
+    except Exception as e:
+        conn.rollback()
         return jsonify({"error": str(e)}), 500
     finally:
         cur.close()

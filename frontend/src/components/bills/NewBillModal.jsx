@@ -12,6 +12,7 @@ export default function NewBillModal({ open, onClose, onCreated }) {
     const [priceType, setPriceType] = useState('retail_price');
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
+    const [phoneError, setPhoneError] = useState('');
 
     const priceTypeOptions = [
         { label: 'Retail', value: 'retail_price' },
@@ -109,6 +110,22 @@ export default function NewBillModal({ open, onClose, onCreated }) {
         setBillItems(billItems.map(row => row.id === rowId ? { ...row, price: numPrice } : row));
     };
 
+    const handlePhoneChange = (e) => {
+        const value = e.target.value.replace(/\D/g, '');
+        if (value.length <= 10) {
+            setCustomerPhone(value);
+            setPhoneError('');
+        }
+    };
+
+    const validatePhone = () => {
+        if (customerPhone && customerPhone.length !== 10) {
+            setPhoneError('Phone number must be 10 digits.');
+        } else {
+            setPhoneError('');
+        }
+    };
+
     const addNewRow = () => {
         setBillItems([...billItems, { id: Date.now(), item: null, quantity: 1, price: 0 }]);
     };
@@ -127,6 +144,9 @@ export default function NewBillModal({ open, onClose, onCreated }) {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        validatePhone();
+        if (phoneError) return;
+
         setLoading(true);
         setError('');
 
@@ -141,7 +161,7 @@ export default function NewBillModal({ open, onClose, onCreated }) {
 
         try {
             const token = localStorage.getItem('authToken');
-            const res = await fetch('/api/bills', {
+            const res = await fetch('/api/create-bill', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -190,14 +210,28 @@ export default function NewBillModal({ open, onClose, onCreated }) {
                 {error && <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" role="alert">{error}</div>}
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                    <input type="text" placeholder="Customer Name" value={customerName} onChange={e => setCustomerName(e.target.value)} className="w-full px-3 py-2 border rounded-md text-sm" />
-                    <input type="text" placeholder="Customer Phone" value={customerPhone} onChange={e => setCustomerPhone(e.target.value)} className="w-full px-3 py-2 border rounded-md text-sm" />
-                    <CustomDropdown
-                        options={statusOptions}
-                        selectedOption={statusOptions.find(option => option.value === status)}
-                        onSelect={(option) => setStatus(option.value)}
-                        placeholder="Select Status"
-                    />
+                    <div>
+                        <input type="text" placeholder="Customer Name" value={customerName} onChange={e => setCustomerName(e.target.value)} className="w-full px-3 py-2 border rounded-md text-sm" />
+                    </div>
+                    <div>
+                        <input 
+                            type="text" 
+                            placeholder="Customer Phone" 
+                            value={customerPhone} 
+                            onChange={handlePhoneChange} 
+                            onBlur={validatePhone}
+                            className={`w-full px-3 py-2 border rounded-md text-sm ${phoneError ? 'border-red-500' : ''}`}
+                        />
+                        {phoneError && <p className="text-red-500 text-xs mt-1">{phoneError}</p>}
+                    </div>
+                    <div>
+                        <CustomDropdown
+                            options={statusOptions}
+                            selectedOption={statusOptions.find(option => option.value === status)}
+                            onSelect={(option) => setStatus(option.value)}
+                            placeholder="Select Status"
+                        />
+                    </div>
                 </div>
 
                 <div className="flex-grow border-t border-b py-2">
