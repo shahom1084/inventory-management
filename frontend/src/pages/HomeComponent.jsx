@@ -25,7 +25,6 @@ export default function HomeComponent({ onLogout }) {
                         <a className="hover:text-white/90 text-slate-300" href="#/home" onClick={(e) => goto(e, '#/home')}>Home</a>
                         <a className="hover:text-white/90 text-slate-300" href="#/items" onClick={(e) => goto(e, '#/items')}>Items</a>
                         <a className="hover:text-white/90 text-slate-300" href="#/bills" onClick={(e) => goto(e, '#/bills')}>Bills</a>
-                        <a className="hover:text-white/90 text-slate-300" href="#">Ledger</a>
                     </nav>
                     <div className="flex items-center gap-2">
                         <button
@@ -45,7 +44,6 @@ export default function HomeComponent({ onLogout }) {
                     <a href="#/home" onClick={(e) => goto(e, '#/home')} className="px-3 py-1 rounded-full bg-white shadow text-slate-700">Home</a>
                     <a href="#/items" onClick={(e) => goto(e, '#/items')} className="px-3 py-1 rounded-full bg-white shadow text-slate-500">Items</a>
                     <a href="#/bills" onClick={(e) => goto(e, '#/bills')} className="px-3 py-1 rounded-full bg-white shadow text-slate-500">Bills</a>
-                    <span className="px-3 py-1 rounded-full bg-white shadow text-slate-500">Ledger</span>
                 </div>
 
                 {/* Dashboard Grid */}
@@ -91,20 +89,6 @@ export default function HomeComponent({ onLogout }) {
                             <p className="mt-2 text-sm text-rose-600 font-semibold">0 Total Bills</p>
                         </div>
                     </button>
-
-                    {/* Card: Ledger */}
-                    <div className="bg-white rounded-2xl shadow p-6 flex items-center gap-5 border border-slate-100 min-h-[160px]">
-                        <div className="w-12 h-12 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center shrink-0">
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M12 8c-2.21 0-4 1.343-4 3s1.79 3 4 3 4-1.343 4-3-1.79-3-4-3zm 0 0V4m0 10v6" />
-                            </svg>
-                        </div>
-                        <div className="flex-1">
-                            <h3 className="text-slate-800 font-semibold">Ledger</h3>
-                            <p className="text-xs text-slate-500">Track accounts & payments</p>
-                            <p className="mt-2 text-sm text-amber-600 font-semibold">₹0.00 Outstanding</p>
-                        </div>
-                    </div>
                 </div>
             </main>
         </div>

@@ -4,25 +4,33 @@ import EditItemModal from '../components/items/EditItemModal';
 import StockControl from '../components/items/StockControl';
 import ConfirmationModal from '../components/common/ConfirmationModal';
 
-function HeaderBar({ onNewItem, initials }) {
+function HeaderBar({ onNewItem, initials, showDeleted, onToggleShowDeleted }) {
     return (
         <div className="w-full flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div className="flex items-center gap-3">
                 <div className="w-8 h-8 rounded-md bg-amber-500/90 text-white flex items-center justify-center shadow-sm">
                     <span className="text-sm font-bold">{initials}</span>
                 </div>
-                <h2 className="text-xl font-semibold text-slate-800">Items</h2>
+                <h2 className="text-xl font-semibold text-slate-800">{showDeleted ? "Deleted Items" : "Items"}</h2>
             </div>
             <div className="flex items-center gap-3">
                 <button
-                    onClick={onNewItem}
-                    className="inline-flex items-center gap-2 bg-amber-500 hover:bg-amber-600 text-white px-4 py-2 rounded-md text-sm shadow"
+                    onClick={onToggleShowDeleted}
+                    className="inline-flex items-center gap-2 bg-slate-200 hover:bg-slate-300 text-slate-800 px-4 py-2 rounded-md text-sm shadow"
                 >
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
-                    </svg>
-                    New Item
+                    {showDeleted ? "Show Active Items" : "Show Deleted Items"}
                 </button>
+                {!showDeleted && (
+                    <button
+                        onClick={onNewItem}
+                        className="inline-flex items-center gap-2 bg-amber-500 hover:bg-amber-600 text-white px-4 py-2 rounded-md text-sm shadow"
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+                        </svg>
+                        New Item
+                    </button>
+                )}
             </div>
         </div>
     );
@@ -44,7 +52,7 @@ function SearchBar({ value, onChange }) {
     );
 }
 
-function ItemsTable({ items, onEdit, onDelete, onStockChange, loading, error, stockLoading }) {
+function ItemsTable({ items, onEdit, onDelete, onStockChange, loading, error, stockLoading, showDeleted, onRestore }) {
     return (
         <div className="hidden md:block w-full max-h-[70vh] overflow-auto rounded-xl border border-slate-200 bg-white shadow">
             <table className="min-w-full text-left text-sm">
@@ -54,22 +62,22 @@ function ItemsTable({ items, onEdit, onDelete, onStockChange, loading, error, st
                         <th className="px-4 py-3 font-medium">Cost</th>
                         <th className="px-4 py-3 font-medium">Retail</th>
                         <th className="px-4 py-3 font-medium">Wholesale</th>
-                        <th className="px-4 py-3 font-medium">Stock</th>
+                        {!showDeleted && <th className="px-4 py-3 font-medium">Stock</th>}
                         <th className="px-4 py-3 font-medium text-right">Actions</th>
                     </tr>
                 </thead>
                 <tbody>
                     {loading ? (
                         <tr>
-                            <td className="px-4 py-6 text-center text-slate-500" colSpan={6}>Loading...</td>
+                            <td className="px-4 py-6 text-center text-slate-500" colSpan={showDeleted ? 5 : 6}>Loading...</td>
                         </tr>
                     ) : error ? (
                         <tr>
-                            <td className="px-4 py-6 text-center text-red-500" colSpan={6}>{error}</td>
+                            <td className="px-4 py-6 text-center text-red-500" colSpan={showDeleted ? 5 : 6}>{error}</td>
                         </tr>
                     ) : items.length === 0 ? (
                         <tr>
-                            <td className="px-4 py-6 text-center text-slate-500" colSpan={6}>No items found</td>
+                            <td className="px-4 py-6 text-center text-slate-500" colSpan={showDeleted ? 5 : 6}>No items found</td>
                         </tr>
                     ) : (
                         items.map((it) => (
@@ -81,22 +89,32 @@ function ItemsTable({ items, onEdit, onDelete, onStockChange, loading, error, st
                                 <td className="px-4 py-3 text-slate-700">{it.cost_price ? `₹${it.cost_price}${it.si_unit ? `/${it.si_unit}` : ''}` : '-'}</td>
                                 <td className="px-4 py-3 text-slate-800 font-semibold">{it.retail_price ? `₹${it.retail_price}${it.si_unit ? `/${it.si_unit}` : ''}` : '-'}</td>
                                 <td className="px-4 py-3 text-slate-700">{it.wholesale_price ? `₹${it.wholesale_price}${it.si_unit ? `/${it.si_unit}` : ''}` : '-'}</td>
-                                <td className="px-4 py-3">
-                                    <StockControl 
-                                        stock={it.stock_quantity}
-                                        onIncrement={() => onStockChange(it.id, 'increment')}
-                                        onDecrement={() => onStockChange(it.id, 'decrement')}
-                                        loading={stockLoading[it.id]}
-                                    />
-                                </td>
+                                {!showDeleted && (
+                                    <td className="px-4 py-3">
+                                        <StockControl 
+                                            stock={it.stock_quantity}
+                                            onIncrement={() => onStockChange(it.id, 'increment')}
+                                            onDecrement={() => onStockChange(it.id, 'decrement')}
+                                            loading={stockLoading[it.id]}
+                                        />
+                                    </td>
+                                )}
                                 <td className="px-4 py-3">
                                     <div className="w-full flex justify-end gap-2">
-                                        <button onClick={() => onDelete(it.id)} className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md border border-red-200 bg-red-50 hover:bg-red-100 text-red-600 text-xs font-semibold">
-                                            Delete
-                                        </button>
-                                        <button onClick={() => onEdit(it)} className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md border border-slate-200 bg-white hover:bg-slate-100 text-xs font-semibold">
-                                            Edit
-                                        </button>
+                                        {showDeleted ? (
+                                            <button onClick={() => onRestore(it.id)} className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md border border-green-200 bg-green-50 hover:bg-green-100 text-green-600 text-xs font-semibold">
+                                                Restore
+                                            </button>
+                                        ) : (
+                                            <>
+                                                <button onClick={() => onDelete(it.id)} className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md border border-red-200 bg-red-50 hover:bg-red-100 text-red-600 text-xs font-semibold">
+                                                    Delete
+                                                </button>
+                                                <button onClick={() => onEdit(it)} className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md border border-slate-200 bg-white hover:bg-slate-100 text-xs font-semibold">
+                                                    Edit
+                                                </button>
+                                            </>
+                                        )}
                                     </div>
                                 </td>
                             </tr>
@@ -108,7 +126,7 @@ function ItemsTable({ items, onEdit, onDelete, onStockChange, loading, error, st
     );
 }
 
-function ItemsCards({ items, onEdit, onDelete, onStockChange, loading, error, stockLoading }) {
+function ItemsCards({ items, onEdit, onDelete, onStockChange, loading, error, stockLoading, showDeleted, onRestore }) {
     return (
         <div className="md:hidden grid grid-cols-1 gap-3">
             {loading && <div className="text-center text-slate-500">Loading...</div>}
@@ -122,12 +140,20 @@ function ItemsCards({ items, onEdit, onDelete, onStockChange, loading, error, st
                             <p className="text-xs text-slate-500 mt-0.5">{it.description || '—'}</p>
                         </div>
                         <div className='flex items-center gap-2'>
-                            <button onClick={() => onDelete(it.id)} className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md border border-red-200 bg-red-50 hover:bg-red-100 text-red-600 text-xs font-semibold">
-                                Delete
-                            </button>
-                            <button onClick={() => onEdit(it)} className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md border border-slate-200 bg-white hover:bg-slate-100 text-xs font-semibold">
-                                Edit
-                            </button>
+                            {showDeleted ? (
+                                <button onClick={() => onRestore(it.id)} className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md border border-green-200 bg-green-50 hover:bg-green-100 text-green-600 text-xs font-semibold">
+                                    Restore
+                                </button>
+                            ) : (
+                                <>
+                                    <button onClick={() => onDelete(it.id)} className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md border border-red-200 bg-red-50 hover:bg-red-100 text-red-600 text-xs font-semibold">
+                                        Delete
+                                    </button>
+                                    <button onClick={() => onEdit(it)} className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md border border-slate-200 bg-white hover:bg-slate-100 text-xs font-semibold">
+                                        Edit
+                                    </button>
+                                </>
+                            )}
                         </div>
                     </div>
                     <div className="mt-3 grid grid-cols-3 gap-2 text-sm">
@@ -135,15 +161,17 @@ function ItemsCards({ items, onEdit, onDelete, onStockChange, loading, error, st
                         <div className="bg-emerald-50 text-emerald-700 rounded-md px-2 py-1 text-center font-semibold">Retail {it.retail_price ? `₹${it.retail_price}${it.si_unit ? `/${it.si_unit}` : ''}` : '-'}</div>
                         <div className="bg-teal-50 text-teal-700 rounded-md px-2 py-1 text-center">Wholesale {it.wholesale_price ? `₹${it.wholesale_price}${it.si_unit ? `/${it.si_unit}` : ''}` : '-'}</div>
                     </div>
-                    <div className="mt-3 flex items-center justify-between gap-2 text-sm">
-                        <span className="font-semibold">Stock:</span>
-                        <StockControl 
-                            stock={it.stock_quantity}
-                            onIncrement={() => onStockChange(it.id, 'increment')}
-                            onDecrement={() => onStockChange(it.id, 'decrement')}
-                            loading={stockLoading[it.id]}
-                        />
-                    </div>
+                    {!showDeleted && (
+                        <div className="mt-3 flex items-center justify-between gap-2 text-sm">
+                            <span className="font-semibold">Stock:</span>
+                            <StockControl 
+                                stock={it.stock_quantity}
+                                onIncrement={() => onStockChange(it.id, 'increment')}
+                                onDecrement={() => onStockChange(it.id, 'decrement')}
+                                loading={stockLoading[it.id]}
+                            />
+                        </div>
+                    )}
                 </div>
             ))}
         </div>
@@ -161,6 +189,7 @@ export default function ItemsPage() {
     const [shopName, setShopName] = useState('');
     const [stockLoading, setStockLoading] = useState({});
     const [itemToDelete, setItemToDelete] = useState(null);
+    const [showDeleted, setShowDeleted] = useState(false);
 
     const getInitials = (name) => {
         if (!name || typeof name !== 'string') return 'SN';
@@ -185,21 +214,22 @@ export default function ItemsPage() {
     const fetchItems = useCallback(async () => {
         setLoading(true);
         setError('');
+        const endpoint = showDeleted ? '/api/items/deleted' : '/api/items';
         try {
             const token = localStorage.getItem('authToken');
-            const res = await fetch('/api/items', { headers: { 'Authorization': `Bearer ${token}` } });
+            const res = await fetch(endpoint, { headers: { 'Authorization': `Bearer ${token}` } });
             const data = await res.json();
             if (!res.ok) {
-                throw new Error(data.error || 'Failed to load items');
+                throw new Error(data.error || `Failed to load ${showDeleted ? 'deleted' : 'active'} items`);
             } else {
                 setItems(Array.isArray(data.items) ? data.items : []);
             }
         } catch (e) {
-            setError(e.message || 'Failed to load items');
+            setError(e.message || `Failed to load ${showDeleted ? 'deleted' : 'active'} items`);
         } finally {
             setLoading(false);
         }
-    }, []);
+    }, [showDeleted]);
 
     useEffect(() => {
         fetchItems();
@@ -238,6 +268,21 @@ export default function ItemsPage() {
             alert("Error: " + err.message);
             setItemToDelete(null);
         }
+   };
+
+    const handleRestore = async (itemId) => {
+        try {
+            const token = localStorage.getItem('authToken');
+            const res = await fetch(`/api/items/${itemId}/restore`, {
+                method: 'PATCH',
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || 'Failed to restore item');
+            setItems(prev => prev.filter(i => i.id !== itemId));
+        } catch (err) {
+            alert("Error: " + err.message);
+        }
     };
 
     const handleStockChange = async (itemId, action) => {
@@ -265,10 +310,35 @@ export default function ItemsPage() {
     return (
         <div className="min-h-screen w-full bg-[#f7f5f2]">
             <div className="w-full px-4 sm:px-6 lg:px-10 py-6 space-y-4">
-                <HeaderBar onNewItem={handleNewItem} initials={getInitials(shopName)} />
+                <HeaderBar 
+                    onNewItem={handleNewItem} 
+                    initials={getInitials(shopName)} 
+                    showDeleted={showDeleted}
+                    onToggleShowDeleted={() => setShowDeleted(prev => !prev)}
+                />
                 <SearchBar value={query} onChange={setQuery} />
-                <ItemsTable items={filtered} onEdit={handleEdit} onDelete={handleDeleteRequest} onStockChange={handleStockChange} loading={loading} error={error} stockLoading={stockLoading} />
-                <ItemsCards items={filtered} onEdit={handleEdit} onDelete={handleDeleteRequest} onStockChange={handleStockChange} loading={loading} error={error} stockLoading={stockLoading} />
+                <ItemsTable 
+                    items={filtered} 
+                    onEdit={handleEdit} 
+                    onDelete={handleDeleteRequest} 
+                    onStockChange={handleStockChange} 
+                    loading={loading} 
+                    error={error} 
+                    stockLoading={stockLoading}
+                    showDeleted={showDeleted}
+                    onRestore={handleRestore}
+                />
+                <ItemsCards 
+                    items={filtered} 
+                    onEdit={handleEdit} 
+                    onDelete={handleDeleteRequest} 
+                    onStockChange={handleStockChange} 
+                    loading={loading} 
+                    error={error} 
+                    stockLoading={stockLoading}
+                    showDeleted={showDeleted}
+                    onRestore={handleRestore}
+                />
             </div>
             <NewItemModal open={showNew} onClose={() => setShowNew(false)} onCreated={fetchItems} />
             {editingItem && <EditItemModal item={editingItem} open={showEdit} onClose={() => { setShowEdit(false); setEditingItem(null); }} onUpdated={fetchItems} />}

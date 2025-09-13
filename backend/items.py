@@ -178,3 +178,59 @@ def update_stock(current_user_id, item_id):
     finally:
         cur.close()
         conn.close()
+
+@items_bp.route('/api/items/deleted', methods=['GET'])
+@token_required
+def get_deleted_items(current_user_id):
+    conn = get_db_connection()
+    cur = conn.cursor()
+    try:
+        cur.execute("SELECT id FROM shop WHERE user_id = %s;", (current_user_id,))
+        shop_record = cur.fetchone()
+        if not shop_record:
+            return jsonify({"error": "No shop associated with this user. Please register your shop."}), 404
+        shop_id = shop_record[0]
+        cur.execute("SELECT id, name, description, cost_price, wholesale_price, retail_price, stock_quantity, si_unit FROM items WHERE shop_id=%s AND is_delete=1;", (shop_id,))
+        items = cur.fetchall()
+        items_list = [{
+            "id": item[0],
+            "name": item[1],
+            "description": item[2],
+            "cost_price": str(item[3]) if item[3] is not None else None,
+            "wholesale_price": str(item[4]) if item[4] is not None else None,
+            "retail_price": str(item[5]) if item[5] is not None else None,
+            "stock_quantity": item[6],
+            "si_unit": item[7]
+        } for item in items]
+        return jsonify({"items": items_list}), 200
+    except Exception as e:
+        conn.rollback() # This rollback is not strictly necessary for a GET, but harmless.
+        return jsonify({"error": str(e)}), 500
+    finally:
+        cur.close()
+        conn.close()
+
+@items_bp.route('/api/items/<string:item_id>/restore', methods=['PATCH'])
+@token_required
+def restore_item(current_user_id, item_id):
+    conn = get_db_connection()
+    cur = conn.cursor()
+    try:
+        cur.execute("SELECT shop.user_id FROM items JOIN shop ON items.shop_id = shop.id WHERE items.id = %s;", (item_id,))
+        item_owner_record = cur.fetchone()
+        if not item_owner_record or item_owner_record[0] != current_user_id:
+            return jsonify({"error": "Unauthorized"}), 403
+
+        cur.execute("UPDATE items SET is_delete = 0 WHERE id = %s;", (item_id,))
+        conn.commit()
+        
+        if cur.rowcount == 0:
+            return jsonify({"error": "Item not found"}), 404
+
+        return jsonify({"message": "Item restored successfully"}), 200
+    except Exception as e:
+        conn.rollback()
+        return jsonify({"error": str(e)}), 500
+    finally:
+        cur.close()
+        conn.close()
