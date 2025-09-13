@@ -5,6 +5,7 @@ import HomeComponent from './pages/HomeComponent';
 import ShopSetup from './pages/ShopSetup';
 import ItemsPage from './pages/Items';
 import BillsPage from './pages/Bills';
+import CustomersPage from './pages/Customers'; // Import CustomersPage
 import { useShop } from './context/ShopContext';
 
 export default function App() {
@@ -17,7 +18,7 @@ export default function App() {
     const navigate = (v) => {
         console.log('navigate called with view:', v);
         setView(v);
-        const map = { home: '#/home', items: '#/items', bills: '#/bills', shop_setup: '#/shop-setup', login: '#/login', otp: '#/otp' };
+        const map = { home: '#/home', items: '#/items', bills: '#/bills', customers: '#/customers', shop_setup: '#/shop-setup', login: '#/login', otp: '#/otp' }; // Add customers to map
         window.location.hash = map[v] || '#/home';
         console.log('window.location.hash set to:', window.location.hash);
     };
@@ -89,6 +90,10 @@ export default function App() {
                 console.log('Hash includes #/bills, setting view to bills');
                 return setView('bills');
             }
+            if (h.includes('#/customers')) { // Add customers route
+                console.log('Hash includes #/customers, setting view to customers');
+                return setView('customers');
+            }
             if (h.includes('#/shop-setup')) {
                 console.log('Hash includes #/shop-setup, setting view to shop_setup');
                 return setView('shop_setup');
@@ -118,6 +123,8 @@ export default function App() {
                 return <ItemsPage />;
             case 'bills':
                 return <BillsPage />;
+            case 'customers': // Add customers case
+                return <CustomersPage />;
             case 'home':
                 return <HomeComponent onLogout={handleLogout} />;
             case 'login':

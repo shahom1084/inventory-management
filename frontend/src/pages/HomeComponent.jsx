@@ -25,6 +25,7 @@ export default function HomeComponent({ onLogout }) {
                         <a className="hover:text-white/90 text-slate-300" href="#/home" onClick={(e) => goto(e, '#/home')}>Home</a>
                         <a className="hover:text-white/90 text-slate-300" href="#/items" onClick={(e) => goto(e, '#/items')}>Items</a>
                         <a className="hover:text-white/90 text-slate-300" href="#/bills" onClick={(e) => goto(e, '#/bills')}>Bills</a>
+                        <a className="hover:text-white/90 text-slate-300" href="#/customers" onClick={(e) => goto(e, '#/customers')}>Customers</a>
                     </nav>
                     <div className="flex items-center gap-2">
                         <button
@@ -44,6 +45,7 @@ export default function HomeComponent({ onLogout }) {
                     <a href="#/home" onClick={(e) => goto(e, '#/home')} className="px-3 py-1 rounded-full bg-white shadow text-slate-700">Home</a>
                     <a href="#/items" onClick={(e) => goto(e, '#/items')} className="px-3 py-1 rounded-full bg-white shadow text-slate-500">Items</a>
                     <a href="#/bills" onClick={(e) => goto(e, '#/bills')} className="px-3 py-1 rounded-full bg-white shadow text-slate-500">Bills</a>
+                    <a href="#/customers" onClick={(e) => goto(e, '#/customers')} className="px-3 py-1 rounded-full bg-white shadow text-slate-500">Customers</a>
                 </div>
 
                 {/* Dashboard Grid */}
@@ -63,7 +65,7 @@ export default function HomeComponent({ onLogout }) {
                     </button>
 
                     {/* Card: Customers */}
-                    <div className="bg-white rounded-2xl shadow p-6 flex items-center gap-5 border border-slate-100 min-h-[160px]">
+                    <button onClick={(e) => goto(e, '#/customers')} className="text-left bg-white rounded-2xl shadow p-6 flex items-center gap-5 border border-slate-100 min-h-[160px] hover:shadow-md transition-shadow">
                         <div className="w-12 h-12 rounded-xl bg-teal-50 text-teal-600 flex items-center justify-center shrink-0">
                             <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a4 4 0 00-4-4h-1m-4 6v-2a4 4 0 00-4-4H8m4-4a4 4 0 100-8 4 4 0 000 8z" />
@@ -74,7 +76,7 @@ export default function HomeComponent({ onLogout }) {
                             <p className="text-xs text-slate-500">Customer rates & pricing</p>
                             <p className="mt-2 text-sm text-teal-600 font-semibold">0 Total Customers</p>
                         </div>
-                    </div>
+                    </button>
 
                     {/* Card: Bills */}
                     <button onClick={(e) => goto(e, '#/bills')} className="text-left bg-white rounded-2xl shadow p-6 flex items-center gap-5 border border-slate-100 min-h-[160px] hover:shadow-md transition-shadow">
