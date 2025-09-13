@@ -109,6 +109,48 @@ def get_bill_details(current_user_id, bill_id):
         cur.close()
         conn.close()
 
+@bills_bp.route('/api/bills/<string:bill_id>', methods=['DELETE'])
+@token_required
+def delete_bill(current_user_id, bill_id):
+    restore_items = request.args.get('restore_items', 'false').lower() == 'true'
+    
+    conn = get_db_connection()
+    cur = conn.cursor()
+    try:
+        # Verify the bill belongs to the user's shop
+        cur.execute("""
+            SELECT b.id FROM bills b
+            JOIN shop s ON b.shop_id = s.id
+            WHERE b.id = %s AND s.user_id = %s;
+        """, (bill_id, current_user_id))
+        if not cur.fetchone():
+            return jsonify({"error": "Bill not found or access denied"}), 404
+
+        if restore_items:
+            # Get items and quantities from the bill
+            cur.execute("SELECT item_id, quantity FROM bill_items WHERE bill_id = %s;", (bill_id,))
+            items_to_restore = cur.fetchall()
+            
+            # Update stock for each item
+            for item_id, quantity in items_to_restore:
+                cur.execute("UPDATE items SET stock_quantity = stock_quantity + %s WHERE id = %s;", (quantity, item_id))
+
+        # Delete bill items
+        cur.execute("DELETE FROM bill_items WHERE bill_id = %s;", (bill_id,))
+        
+        # Delete the bill
+        cur.execute("DELETE FROM bills WHERE id = %s;", (bill_id,))
+        
+        conn.commit()
+        return jsonify({"message": "Bill deleted successfully"}), 200
+
+    except Exception as e:
+        conn.rollback()
+        return jsonify({"error": str(e)}), 500
+    finally:
+        cur.close()
+        conn.close()
+
 @bills_bp.route('/api/start-bills', methods=['POST','GET'])
 @token_required
 def create_bill(current_user_id):
@@ -141,7 +183,7 @@ def get_customer_prices(current_user_id):
         cur.execute("SELECT id FROM shop WHERE user_id = %s;", (current_user_id,))
         shop_record = cur.fetchone()
         if not shop_record:
-            return jsonify({"error": "No shop associated with this user."}), 404
+            return jsonify({"error": "No shop associated with this user."})
         shop_id = shop_record[0]
 
         cur.execute("SELECT id FROM customers WHERE TRIM(phone_number) = %s AND shop_id = %s;", (phone_number, shop_id))

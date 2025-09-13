@@ -2,7 +2,7 @@ import React, { useMemo, useState, useEffect, useCallback } from 'react';
 import { useShop } from '../context/ShopContext';
 import NewBillModal from '../components/bills/NewBillModal';
 import BillDetailsModal from '../components/bills/BillDetailsModal';
-// import ConfirmationModal from '../components/common/ConfirmationModal';
+import ConfirmationModal from '../components/common/ConfirmationModal';
 
 function StatusPill({ status }) {
     const statusStyles = {
@@ -166,8 +166,9 @@ export default function BillsPage() {
     const [showNew, setShowNew] = useState(false);
     const [viewingBill, setViewingBill] = useState(null);
     const [loadingBillDetails, setLoadingBillDetails] = useState(false);
-    // const [showConfirmation, setShowConfirmation] = useState(false);
-    // const [billToDelete, setBillToDelete] = useState(null);
+    const [showConfirmation, setShowConfirmation] = useState(false);
+    const [billToDelete, setBillToDelete] = useState(null);
+    const [restoreItems, setRestoreItems] = useState(false);
 
     const fetchBills = useCallback(async () => {
         setLoading(true);
@@ -227,9 +228,34 @@ export default function BillsPage() {
         alert(`Editing bill: ${bill.id}`);
     };
 
-    const handleDelete = (billId) => {
-        // Placeholder for deleting a bill
-        alert(`Deleting bill: ${billId}`);
+    const handleDeleteRequest = (billId) => {
+        setBillToDelete(billId);
+        setShowConfirmation(true);
+    };
+
+    const executeDelete = async () => {
+        if (!billToDelete) return;
+        try {
+            const token = localStorage.getItem('authToken');
+            const url = `/api/bills/${billToDelete}?restore_items=${restoreItems}`;
+            const res = await fetch(url, { 
+                method: 'DELETE',
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || 'Failed to delete bill');
+            
+            setBills(prev => prev.filter(b => b.id !== billToDelete));
+            if (viewingBill && viewingBill.id === billToDelete) {
+                setViewingBill(null);
+            }
+        } catch (err) {
+            alert("Error: " + err.message);
+        } finally {
+            setShowConfirmation(false);
+            setBillToDelete(null);
+            setRestoreItems(false);
+        }
     };
 
     return (
@@ -237,26 +263,28 @@ export default function BillsPage() {
             <div className="w-full px-4 sm:px-6 lg:px-10 py-6 space-y-4">
                 <HeaderBar onNewBill={handleNewBill} />
                 <SearchBar value={query} onChange={setQuery} />
-                <BillsTable bills={filteredBills} onView={handleView} onEdit={handleEdit} onDelete={handleDelete} loading={loading} error={error} />
-                <BillsCards bills={filteredBills} onView={handleView} onEdit={handleEdit} onDelete={handleDelete} loading={loading} error={error} />
+                <BillsTable bills={filteredBills} onView={handleView} onEdit={handleEdit} onDelete={handleDeleteRequest} loading={loading} error={error} />
+                <BillsCards bills={filteredBills} onView={handleView} onEdit={handleEdit} onDelete={handleDeleteRequest} loading={loading} error={error} />
             </div>
             <NewBillModal open={showNew} onClose={() => setShowNew(false)} onCreated={fetchBills} />
             <BillDetailsModal 
                 bill={viewingBill} 
                 onClose={() => setViewingBill(null)} 
                 onEdit={handleEdit}
-                onDelete={handleDelete}
+                onDelete={handleDeleteRequest}
                 loading={loadingBillDetails}
             />
-            {/* <ConfirmationModal 
+            <ConfirmationModal 
                 open={showConfirmation}
                 onClose={() => setShowConfirmation(false)}
-                onConfirm={() => {
-                    // confirm deletion
-                }}
+                onConfirm={executeDelete}
                 title="Delete Bill"
                 message="Are you sure you want to delete this bill? This action cannot be undone."
-            /> */}
+                showCheckbox={true}
+                checkboxLabel="Restore items stock"
+                checkboxChecked={restoreItems}
+                onCheckboxChange={(e) => setRestoreItems(e.target.checked)}
+            />
         </div>
     );
 }
