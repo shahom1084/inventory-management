@@ -46,6 +46,69 @@ def get_bills(current_user_id):
         cur.close()
         conn.close()
 
+@bills_bp.route('/api/bills/<string:bill_id>', methods=['GET'])
+@token_required
+def get_bill_details(current_user_id, bill_id):
+    conn = get_db_connection()
+    cur = conn.cursor()
+    try:
+        # First, verify the bill belongs to the user's shop
+        cur.execute("""
+            SELECT b.id FROM bills b
+            JOIN shop s ON b.shop_id = s.id
+            WHERE b.id = %s AND s.user_id = %s;
+        """, (bill_id, current_user_id))
+        bill_record = cur.fetchone()
+        if not bill_record:
+            return jsonify({"error": "Bill not found or access denied"}), 404
+
+        # Fetch bill details
+        cur.execute("""
+            SELECT b.id, b.customer_id, c.name, b.total_amount, b.bill_date, b.status, b.amount_paid 
+            FROM bills b
+            LEFT JOIN customers c ON b.customer_id = c.id
+            WHERE b.id = %s
+        """, (bill_id,))
+        bill = cur.fetchone()
+
+        if not bill:
+            return jsonify({"error": "Bill not found"}), 404
+
+        # Fetch bill items
+        cur.execute("""
+            SELECT bi.item_id, i.name, bi.quantity, bi.price_per_unit
+            FROM bill_items bi
+            JOIN items i ON bi.item_id = i.id
+            WHERE bi.bill_id = %s
+        """, (bill_id,))
+        items = cur.fetchall()
+
+        bill_details = {
+            "id": bill[0],
+            "customer_id": bill[1],
+            "customer_name": bill[2] or "Walk-in",
+            "totalAmount": float(bill[3]),
+            "createdAt": bill[4].isoformat(),
+            "status": bill[5],
+            "amountPaid": float(bill[6]) if bill[6] is not None else 0,
+            "items": [
+                {
+                    "id": item[0],
+                    "name": item[1],
+                    "quantity": item[2],
+                    "price": float(item[3])
+                }
+                for item in items
+            ]
+        }
+        
+        return jsonify(bill_details), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+    finally:
+        cur.close()
+        conn.close()
+
 @bills_bp.route('/api/start-bills', methods=['POST','GET'])
 @token_required
 def create_bill(current_user_id):

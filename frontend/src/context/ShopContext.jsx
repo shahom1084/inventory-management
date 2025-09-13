@@ -1,6 +1,6 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 
-const ShopContext = createContext({ shopName: '', initials: 'SN', loading: true, error: '', refreshShop: () => {}, clearShop: () => {} });
+const ShopContext = createContext({ shopDetails: {}, initials: 'SN', loading: true, error: '', refreshShop: () => {}, clearShop: () => {} });
 
 const getInitials = (name) => {
     if (!name || typeof name !== 'string') return 'SN';
@@ -11,7 +11,7 @@ const getInitials = (name) => {
 };
 
 export function ShopProvider({ children }) {
-    const [shopName, setShopName] = useState('');
+    const [shopDetails, setShopDetails] = useState({});
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
 
@@ -21,16 +21,16 @@ export function ShopProvider({ children }) {
         try {
             const token = localStorage.getItem('authToken');
             if (!token) {
-                setShopName('');
+                setShopDetails({});
                 setLoading(false);
                 return;
             }
             const res = await fetch('/api/shop', { headers: { 'Authorization': `Bearer ${token}` } });
             const data = await res.json().catch(() => ({}));
             if (res.ok && data && data.shop) {
-                setShopName(data.shop.name || '');
+                setShopDetails(data.shop || {});
             } else if (res.status === 404) {
-                setShopName('');
+                setShopDetails({});
             } else {
                 throw new Error((data && data.error) || 'Failed to fetch shop');
             }
@@ -42,7 +42,7 @@ export function ShopProvider({ children }) {
     }, []);
 
     const clearShop = useCallback(() => {
-        setShopName('');
+        setShopDetails({});
         setError('');
         setLoading(false);
     }, []);
@@ -50,13 +50,13 @@ export function ShopProvider({ children }) {
     useEffect(() => { fetchShop(); }, [fetchShop]);
 
     const value = useMemo(() => ({
-        shopName,
-        initials: getInitials(shopName || 'Shop Name'),
+        shopDetails,
+        initials: getInitials(shopDetails.name || 'Shop Name'),
         loading,
         error,
         refreshShop: fetchShop,
         clearShop,
-    }), [shopName, loading, error, fetchShop, clearShop]);
+    }), [shopDetails, loading, error, fetchShop, clearShop]);
 
     return (
         <ShopContext.Provider value={value}>{children}</ShopContext.Provider>

@@ -1,6 +1,7 @@
 import React, { useMemo, useState, useEffect, useCallback } from 'react';
 import { useShop } from '../context/ShopContext';
 import NewBillModal from '../components/bills/NewBillModal';
+import BillDetailsModal from '../components/bills/BillDetailsModal';
 // import ConfirmationModal from '../components/common/ConfirmationModal';
 
 function StatusPill({ status }) {
@@ -57,7 +58,7 @@ function SearchBar({ value, onChange }) {
     );
 }
 
-function BillsTable({ bills, onView, onDelete, loading, error }) {
+function BillsTable({ bills, onView, onEdit, onDelete, loading, error }) {
     return (
         <div className="hidden md:block w-full max-h-[70vh] overflow-auto rounded-xl border border-slate-200 bg-white shadow">
             <table className="min-w-full text-left text-sm">
@@ -87,7 +88,7 @@ function BillsTable({ bills, onView, onDelete, loading, error }) {
                         </tr>
                     ) : (
                         bills.map((bill) => (
-                            <tr key={bill.id} className="border-t border-slate-100 hover:bg-slate-50">
+                            <tr key={bill.id} onClick={() => onView(bill)} className="border-t border-slate-100 hover:bg-slate-50 cursor-pointer">
                                 <td className="px-4 py-3 text-slate-800 font-medium">#{bill.id.slice(0, 8)}...</td>
                                 <td className="px-4 py-3 text-slate-700">{bill.customer_name}</td>
                                 <td className="px-4 py-3 text-slate-700">{new Date(bill.createdAt).toLocaleDateString()}</td>
@@ -100,11 +101,11 @@ function BillsTable({ bills, onView, onDelete, loading, error }) {
                                 </td>
                                 <td className="px-4 py-3">
                                     <div className="w-full flex justify-end gap-2">
-                                        <button onClick={() => onDelete(bill.id)} className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md border border-red-200 bg-red-50 hover:bg-red-100 text-red-600 text-xs font-semibold">
+                                        <button onClick={(e) => {e.stopPropagation(); onDelete(bill.id)}} className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md border border-red-200 bg-red-50 hover:bg-red-100 text-red-600 text-xs font-semibold">
                                             Delete
                                         </button>
-                                        <button onClick={() => onView(bill)} className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md border border-slate-200 bg-white hover:bg-slate-100 text-xs font-semibold">
-                                            View
+                                        <button onClick={(e) => {e.stopPropagation(); onEdit(bill)}} className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md border border-slate-200 bg-white hover:bg-slate-100 text-xs font-semibold">
+                                            Edit
                                         </button>
                                     </div>
                                 </td>
@@ -117,14 +118,14 @@ function BillsTable({ bills, onView, onDelete, loading, error }) {
     );
 }
 
-function BillsCards({ bills, onView, onDelete, loading, error }) {
+function BillsCards({ bills, onView, onEdit, onDelete, loading, error }) {
     return (
         <div className="md:hidden grid grid-cols-1 gap-3">
             {loading && <div className="text-center text-slate-500">Loading...</div>}
             {error && <div className="text-center text-red-500">{error}</div>}
             {!loading && !error && bills.length === 0 && <div className="text-center text-slate-500">No bills found</div>}
             {bills.map((bill) => (
-                <div key={bill.id} className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm">
+                <div key={bill.id} onClick={() => onView(bill)} className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm cursor-pointer">
                     <div className="flex items-start justify-between">
                         <div>
                             <h4 className="text-slate-800 font-semibold">Bill #{bill.id.slice(0, 8)}...</h4>
@@ -143,11 +144,11 @@ function BillsCards({ bills, onView, onDelete, loading, error }) {
                             </p>
                         )}
                         <div className="flex items-center gap-2 text-sm">
-                            <button onClick={() => onDelete(bill.id)} className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md border border-red-200 bg-red-50 hover:bg-red-100 text-red-600 text-xs font-semibold">
+                            <button onClick={(e) => {e.stopPropagation(); onDelete(bill.id)}} className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md border border-red-200 bg-red-50 hover:bg-red-100 text-red-600 text-xs font-semibold">
                                 Delete
                             </button>
-                            <button onClick={() => onView(bill)} className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md border border-slate-200 bg-white hover:bg-slate-100 text-xs font-semibold">
-                                View
+                            <button onClick={(e) => {e.stopPropagation(); onEdit(bill)}} className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md border border-slate-200 bg-white hover:bg-slate-100 text-xs font-semibold">
+                                Edit
                             </button>
                         </div>
                     </div>
@@ -163,6 +164,8 @@ export default function BillsPage() {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
     const [showNew, setShowNew] = useState(false);
+    const [viewingBill, setViewingBill] = useState(null);
+    const [loadingBillDetails, setLoadingBillDetails] = useState(false);
     // const [showConfirmation, setShowConfirmation] = useState(false);
     // const [billToDelete, setBillToDelete] = useState(null);
 
@@ -200,9 +203,28 @@ export default function BillsPage() {
 
     const handleNewBill = () => setShowNew(true);
     
-    const handleView = (bill) => {
-        // Placeholder for viewing a bill
-        alert(`Viewing bill: ${bill.id}`);
+    const handleView = async (bill) => {
+        setViewingBill(bill); // Show modal immediately with basic info
+        setLoadingBillDetails(true);
+        try {
+            const token = localStorage.getItem('authToken');
+            const res = await fetch(`/api/bills/${bill.id}`, { headers: { 'Authorization': `Bearer ${token}` } });
+            const data = await res.json();
+            if (!res.ok) {
+                throw new Error(data.error || 'Failed to load bill details');
+            }
+            setViewingBill(data); // Update with full bill details
+        } catch (e) {
+            setError(e.message || 'Failed to load bill details');
+            // Optionally close the modal or show an error inside it
+        } finally {
+            setLoadingBillDetails(false);
+        }
+    };
+
+    const handleEdit = (bill) => {
+        // Placeholder for editing a bill
+        alert(`Editing bill: ${bill.id}`);
     };
 
     const handleDelete = (billId) => {
@@ -215,10 +237,17 @@ export default function BillsPage() {
             <div className="w-full px-4 sm:px-6 lg:px-10 py-6 space-y-4">
                 <HeaderBar onNewBill={handleNewBill} />
                 <SearchBar value={query} onChange={setQuery} />
-                <BillsTable bills={filteredBills} onView={handleView} onDelete={handleDelete} loading={loading} error={error} />
-                <BillsCards bills={filteredBills} onView={handleView} onDelete={handleDelete} loading={loading} error={error} />
+                <BillsTable bills={filteredBills} onView={handleView} onEdit={handleEdit} onDelete={handleDelete} loading={loading} error={error} />
+                <BillsCards bills={filteredBills} onView={handleView} onEdit={handleEdit} onDelete={handleDelete} loading={loading} error={error} />
             </div>
             <NewBillModal open={showNew} onClose={() => setShowNew(false)} onCreated={fetchBills} />
+            <BillDetailsModal 
+                bill={viewingBill} 
+                onClose={() => setViewingBill(null)} 
+                onEdit={handleEdit}
+                onDelete={handleDelete}
+                loading={loadingBillDetails}
+            />
             {/* <ConfirmationModal 
                 open={showConfirmation}
                 onClose={() => setShowConfirmation(false)}
