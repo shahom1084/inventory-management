@@ -1,6 +1,7 @@
 import React, { useMemo, useState, useEffect, useCallback } from 'react';
 import { useShop } from '../context/ShopContext';
 import NewBillModal from '../components/bills/NewBillModal';
+import EditBillModal from '../components/bills/EditBillModal';
 import BillDetailsModal from '../components/bills/BillDetailsModal';
 import ConfirmationModal from '../components/common/ConfirmationModal';
 
@@ -164,6 +165,8 @@ export default function BillsPage() {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
     const [showNew, setShowNew] = useState(false);
+    const [showEdit, setShowEdit] = useState(false);
+    const [editingBill, setEditingBill] = useState(null);
     const [viewingBill, setViewingBill] = useState(null);
     const [loadingBillDetails, setLoadingBillDetails] = useState(false);
     const [showConfirmation, setShowConfirmation] = useState(false);
@@ -223,9 +226,23 @@ export default function BillsPage() {
         }
     };
 
-    const handleEdit = (bill) => {
-        // Placeholder for editing a bill
-        alert(`Editing bill: ${bill.id}`);
+    const handleEdit = async (bill) => {
+        setLoadingBillDetails(true);
+        try {
+            const token = localStorage.getItem('authToken');
+            const res = await fetch(`/api/bills/${bill.id}`, { headers: { 'Authorization': `Bearer ${token}` } });
+            const data = await res.json();
+            if (!res.ok) {
+                throw new Error(data.error || 'Failed to load bill details for editing');
+            }
+            setEditingBill(data);
+            setShowEdit(true);
+            setViewingBill(null); // Close the view modal if it was open
+        } catch (e) {
+            alert("Error: " + e.message);
+        } finally {
+            setLoadingBillDetails(false);
+        }
     };
 
     const handleDeleteRequest = (billId) => {
@@ -267,6 +284,14 @@ export default function BillsPage() {
                 <BillsCards bills={filteredBills} onView={handleView} onEdit={handleEdit} onDelete={handleDeleteRequest} loading={loading} error={error} />
             </div>
             <NewBillModal open={showNew} onClose={() => setShowNew(false)} onCreated={fetchBills} />
+            {editingBill && 
+                <EditBillModal 
+                    open={showEdit} 
+                    onClose={() => setShowEdit(false)} 
+                    onUpdated={() => { fetchBills(); setShowEdit(false); }} 
+                    bill={editingBill} 
+                />
+            }
             <BillDetailsModal 
                 bill={viewingBill} 
                 onClose={() => setViewingBill(null)} 

@@ -151,6 +151,93 @@ def delete_bill(current_user_id, bill_id):
         cur.close()
         conn.close()
 
+@bills_bp.route('/api/bills/<string:bill_id>', methods=['PUT'])
+@token_required
+def update_bill(current_user_id, bill_id):
+    data = request.get_json()
+    conn = get_db_connection()
+    cur = conn.cursor()
+    try:
+        # Verify ownership
+        cur.execute("SELECT shop_id FROM bills WHERE id = %s;", (bill_id,))
+        bill_record = cur.fetchone()
+        if not bill_record:
+            return jsonify({"error": "Bill not found"}), 404
+
+        cur.execute("SELECT id FROM shop WHERE user_id = %s;", (current_user_id,))
+        shop_id = cur.fetchone()[0]
+        if shop_id != bill_record[0]:
+            return jsonify({"error": "Access denied"}), 403
+
+        # Fetch original bill items to calculate stock changes
+        cur.execute("SELECT item_id, quantity FROM bill_items WHERE bill_id = %s;", (bill_id,))
+        original_items = cur.fetchall()
+        
+        # Restore stock for all original items
+        for item_id, quantity in original_items:
+            cur.execute("UPDATE items SET stock_quantity = stock_quantity + %s WHERE id = %s;", (quantity, item_id))
+
+        # Delete old bill items
+        cur.execute("DELETE FROM bill_items WHERE bill_id = %s;", (bill_id,))
+
+        # Process new/updated data
+        customer_name = data.get('customerName')
+        customer_phone = data.get('customerPhone')
+        bill_items = data.get('billItems')
+        total_amount = data.get('totalAmount')
+        status = data.get('status')
+        amount_paid = data.get('amountPaid')
+
+        # Customer handling
+        customer_id = None
+        if customer_phone:
+            cur.execute("SELECT id FROM customers WHERE phone_number = %s AND shop_id = %s;", (customer_phone, shop_id))
+            customer_record = cur.fetchone()
+            if customer_record:
+                customer_id = customer_record[0]
+        if not customer_id and customer_name:
+            cur.execute("INSERT INTO customers (name, phone_number, shop_id) VALUES (%s, %s, %s) RETURNING id;", (customer_name, customer_phone, shop_id))
+            customer_id = cur.fetchone()[0]
+
+        # Update bill
+        cur.execute("""
+            UPDATE bills 
+            SET customer_id = %s, total_amount = %s, status = %s, amount_paid = %s
+            WHERE id = %s;
+        """, (customer_id, total_amount, status, amount_paid, bill_id))
+
+        # Insert new bill items and update stock
+        for item in bill_items:
+            item_id = item.get('item').get('id')
+            quantity_sold = item.get('quantity')
+            price = item.get('price')
+
+            cur.execute("UPDATE items SET stock_quantity = stock_quantity - %s WHERE id = %s;", (quantity_sold, item_id))
+            cur.execute("INSERT INTO bill_items (bill_id, item_id, quantity, price_per_unit) VALUES (%s, %s, %s, %s);", (bill_id, item_id, quantity_sold, price))
+
+            # Update customer-specific pricing
+            if customer_id:
+                cur.execute("SELECT retail_price, wholesale_price FROM items WHERE id = %s;", (item_id,))
+                item_prices = cur.fetchone()
+                if item_prices:
+                    is_standard = (price == item_prices[0] or price == item_prices[1])
+                    if not is_standard:
+                        cur.execute("""
+                            INSERT INTO customer_item_prices (customer_id, item_id, custom_price)
+                            VALUES (%s, %s, %s)
+                            ON CONFLICT (customer_id, item_id) DO UPDATE SET custom_price = EXCLUDED.custom_price;
+                        """, (customer_id, item_id, price))
+
+        conn.commit()
+        return jsonify({"message": "Bill updated successfully"}), 200
+
+    except Exception as e:
+        conn.rollback()
+        return jsonify({"error": str(e)}), 500
+    finally:
+        cur.close()
+        conn.close()
+
 @bills_bp.route('/api/start-bills', methods=['POST','GET'])
 @token_required
 def create_bill(current_user_id):
