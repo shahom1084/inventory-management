@@ -97,6 +97,38 @@ function CustomersTable({ customers, onEdit, onDelete, loading, error }) {
     );
 }
 
+function CustomersCards({ customers, onEdit, onDelete, loading, error }) {
+    return (
+        <div className="md:hidden grid grid-cols-1 gap-3">
+            {loading && <div className="text-center text-slate-500">Loading...</div>}
+            {error && <div className="text-center text-red-500">{error}</div>}
+            {!loading && !error && customers.length === 0 && <div className="text-center text-slate-500">No customers found</div>}
+            {customers.map((c) => (
+                <div key={c.id} className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm">
+                    <div className="flex items-start justify-between">
+                        <div>
+                            <h4 className="text-slate-800 font-semibold">{c.name}</h4>
+                            <p className="text-xs text-slate-500 mt-0.5">{c.phone_number}</p>
+                        </div>
+                        <div className="flex items-center gap-2 text-sm">
+                            <button onClick={() => onDelete(c.id)} className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md border border-red-200 bg-red-50 hover:bg-red-100 text-red-600 text-xs font-semibold">
+                                Delete
+                            </button>
+                            <button onClick={() => onEdit(c)} className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md border border-slate-200 bg-white hover:bg-slate-100 text-xs font-semibold">
+                                Edit
+                            </button>
+                        </div>
+                    </div>
+                    <div className="mt-3 text-sm text-slate-600">
+                        <p>{c.email || 'No email'}</p>
+                        <p>{c.address || 'No address'}</p>
+                    </div>
+                </div>
+            ))}
+        </div>
+    );
+}
+
 export default function CustomersPage() {
     const [query, setQuery] = useState('');
     const [customers, setCustomers] = useState([]);
@@ -134,8 +166,8 @@ export default function CustomersPage() {
         const q = query.trim().toLowerCase();
         if (!q) return customers;
         return customers.filter((c) =>
-            c.name.toLowerCase().includes(q) ||
-            c.phone_number.toLowerCase().includes(q)
+            (c.name && c.name.toLowerCase().includes(q)) ||
+            (c.phone_number && c.phone_number.toLowerCase().includes(q))
         );
     }, [customers, query]);
 
@@ -174,6 +206,7 @@ export default function CustomersPage() {
                 <HeaderBar onNewCustomer={handleNewCustomer} />
                 <SearchBar value={query} onChange={setQuery} />
                 <CustomersTable customers={filteredCustomers} onEdit={handleEdit} onDelete={handleDeleteRequest} loading={loading} error={error} />
+                <CustomersCards customers={filteredCustomers} onEdit={handleEdit} onDelete={handleDeleteRequest} loading={loading} error={error} />
             </div>
             <NewCustomerModal open={showNew} onClose={() => setShowNew(false)} onCreated={fetchCustomers} />
             {editingCustomer && <EditCustomerModal customer={editingCustomer} open={showEdit} onClose={() => { setShowEdit(false); setEditingCustomer(null); }} onUpdated={fetchCustomers} />}

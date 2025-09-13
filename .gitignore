@@ -6,6 +6,7 @@ config.py
 db.txt
 firebaseconfig.txt
 *.png
+.env
 
 # Node (if any)
 node_modules/
