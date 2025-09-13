@@ -243,22 +243,28 @@ def create_new_bill(current_user_id):
         )
         bill_id = cur.fetchone()[0]
 
-        # Insert into bill_items table
+        # Insert into bill_items table and update stock
         for item in bill_items:
             item_id = item.get('item').get('id')
-            quantity = item.get('quantity')
+            quantity_sold = item.get('quantity')
             price = item.get('price')
 
-            if not item_id or not quantity or price is None:
+            if not item_id or not quantity_sold or price is None:
                 conn.rollback()
                 return jsonify({"error": "Each item must have item_id, quantity, and price."} ), 400
+
+            # Update stock without checking if it will go negative
+            cur.execute(
+                "UPDATE items SET stock_quantity = stock_quantity - %s WHERE id = %s;",
+                (quantity_sold, item_id)
+            )
 
             cur.execute(
                 """
                 INSERT INTO bill_items (bill_id, item_id, quantity, price_per_unit) 
                 VALUES (%s, %s, %s, %s);
                 """,
-                (bill_id, item_id, quantity, price)
+                (bill_id, item_id, quantity_sold, price)
             )
 
             # Save custom price if necessary
