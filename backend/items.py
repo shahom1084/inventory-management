@@ -15,7 +15,7 @@ def get_items(current_user_id):
         if not shop_record:
             return jsonify({"error": "No shop associated with this user. Please register your shop."}), 404
         shop_id = shop_record[0]
-        cur.execute("SELECT id, name, description, cost_price, wholesale_price, retail_price, stock_quantity, si_unit FROM items WHERE shop_id=%s;", (shop_id,))
+        cur.execute("SELECT id, name, description, cost_price, wholesale_price, retail_price, stock_quantity, si_unit FROM items WHERE shop_id=%s and is_delete=0;", (shop_id,))
         items = cur.fetchall()
         items_list = [{
             "id": item[0],
@@ -128,7 +128,7 @@ def delete_item(current_user_id, item_id):
         if not item_owner_record or item_owner_record[0] != current_user_id:
             return jsonify({"error": "Unauthorized"}), 403
 
-        cur.execute("DELETE FROM items WHERE id = %s;", (item_id,))
+        cur.execute("UPDATE items SET is_delete = 1 WHERE id = %s;", (item_id,))
         conn.commit()
         
         if cur.rowcount == 0:

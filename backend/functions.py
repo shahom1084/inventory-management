@@ -13,7 +13,7 @@ def fetch_items(user_id):
 
         cur.execute(
             "SELECT id, name, description, cost_price, wholesale_price, retail_price, stock_quantity, si_unit "
-            "FROM items WHERE shop_id=%s;", (shop_id,)
+            "FROM items WHERE shop_id=%s AND is_delete = 0;", (shop_id,)
         )
         items = cur.fetchall()
 
