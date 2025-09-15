@@ -11,7 +11,11 @@ from flask_cors import CORS
 
 
 app = Flask(__name__)
-CORS(app, resources={r"/api/*": {"origins": "https://inventoryandcustomermanagement.netlify.app"}})
+CORS(app, resources={r"/api/*": {
+    "origins": ["https://inventoryandcustomermanagement.netlify.app"],
+    "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    "allow_headers": ["Content-Type", "Authorization"]
+}})
 app.register_blueprint(auth_bp)
 app.register_blueprint(shop_bp)
 app.register_blueprint(homepage_bp)
