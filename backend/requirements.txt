@@ -6,4 +6,4 @@ python-dotenv
 flask-cors
 PyJWT
 bcrypt
-json
+
