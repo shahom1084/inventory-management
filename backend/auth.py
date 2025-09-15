@@ -3,13 +3,13 @@ import jwt
 import psycopg2
 from flask import Blueprint, request, jsonify
 from datetime import datetime, timedelta
-from config import DB_CONFIG, SECRET_KEY
+from config import SECRET_KEY,DATABASE_URL
 
 auth_bp = Blueprint('auth', __name__)
 
 def get_db_connection():
     """Helper function to create a database connection."""
-    conn = psycopg2.connect(**DB_CONFIG)
+    conn = psycopg2.connect(DATABASE_URL)
     return conn
 
 @auth_bp.route('/api/check-user', methods=['POST'])

@@ -2,12 +2,12 @@ import jwt
 import psycopg2
 from functools import wraps
 from flask import Blueprint, request, jsonify
-from config import DB_CONFIG, SECRET_KEY
+from config import DATABASE_URL, SECRET_KEY
 
 shop_bp = Blueprint('shop', __name__)
 
 def get_db_connection():
-    conn = psycopg2.connect(**DB_CONFIG)
+    conn = psycopg2.connect(DATABASE_URL)
     return conn
 
 def token_required(f):
