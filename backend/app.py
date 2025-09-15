@@ -1,3 +1,5 @@
+from dotenv import load_dotenv
+load_dotenv()
 from flask import Flask
 from auth import auth_bp
 from shop_details import shop_bp
@@ -6,11 +8,10 @@ from items import items_bp
 from bills import bills_bp
 from customers import customers_bp
 from flask_cors import CORS
-from dotenv import load_dotenv
-load_dotenv()
+f
 
 app = Flask(__name__)
-CORS(app, resources={r"/api/*": {"origins": "http://placeholder.com"}})
+CORS(app, resources={r"/api/*": {"origins": "https://inventoryandcustomermanagement.netlify.app"}})
 app.register_blueprint(auth_bp)
 app.register_blueprint(shop_bp)
 app.register_blueprint(homepage_bp)
