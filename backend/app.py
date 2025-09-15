@@ -8,7 +8,7 @@ from items import items_bp
 from bills import bills_bp
 from customers import customers_bp
 from flask_cors import CORS
-f
+
 
 app = Flask(__name__)
 CORS(app, resources={r"/api/*": {"origins": "https://inventoryandcustomermanagement.netlify.app"}})
