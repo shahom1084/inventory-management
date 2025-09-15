@@ -1,4 +1,5 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import getApiUrl from '../utils/api';
 
 const ShopContext = createContext({ shopDetails: {}, shopName: '', initials: 'SN', loading: true, error: '', refreshShop: () => {}, clearShop: () => {} });
 
@@ -25,7 +26,7 @@ export function ShopProvider({ children }) {
                 setLoading(false);
                 return;
             }
-            const res = await fetch('/api/shop', { headers: { 'Authorization': `Bearer ${token}` } });
+            const res = await fetch(getApiUrl('/shop'), { headers: { 'Authorization': `Bearer ${token}` } });
             const data = await res.json().catch(() => ({}));
             if (res.ok && data && data.shop) {
                 setShopDetails(data.shop || {});

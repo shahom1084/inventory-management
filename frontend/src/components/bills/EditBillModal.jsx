@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import SearchableItemDropdown from './SearchableItemDropdown';
 import CustomDropdown from '../common/CustomDropdown';
+import getApiUrl from '../../utils/api';
 
 export default function EditBillModal({ open, onClose, onUpdated, bill }) {
     const [customerName, setCustomerName] = useState('');
@@ -41,7 +42,7 @@ export default function EditBillModal({ open, onClose, onUpdated, bill }) {
     const fetchItems = useCallback(async () => {
         try {
             const token = localStorage.getItem('authToken');
-            const res = await fetch('/api/items', { headers: { 'Authorization': `Bearer ${token}` } });
+            const res = await fetch(getApiUrl('/items'), { headers: { 'Authorization': `Bearer ${token}` } });
             const data = await res.json();
             if (res.ok) {
                 setAllItems(data.items || []);
@@ -56,7 +57,7 @@ export default function EditBillModal({ open, onClose, onUpdated, bill }) {
     const fetchCustomerPrices = async (phoneNumber) => {
         try {
             const token = localStorage.getItem('authToken');
-            const res = await fetch(`/api/customer-prices?phone_number=${phoneNumber}`, {
+            const res = await fetch(getApiUrl(`/customer-prices?phone_number=${phoneNumber}`), {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             const data = await res.json();
@@ -172,7 +173,7 @@ export default function EditBillModal({ open, onClose, onUpdated, bill }) {
 
         try {
             const token = localStorage.getItem('authToken');
-            const res = await fetch(`/api/bills/${bill.id}` , {
+            const res = await fetch(getApiUrl(`/bills/${bill.id}`) , {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',

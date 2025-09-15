@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import getApiUrl from '../../utils/api';
 
 export default function NewItemModal({ open, onClose, onCreated }) {
     const [name, setName] = useState('');
@@ -32,7 +33,7 @@ export default function NewItemModal({ open, onClose, onCreated }) {
         setError('');
         try {
             const token = localStorage.getItem('authToken');
-            const res = await fetch('/api/create-items', {
+            const res = await fetch(getApiUrl('/create-items'), {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

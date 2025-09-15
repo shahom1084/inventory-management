@@ -1,5 +1,6 @@
 import React, { useState, useRef } from 'react';
 import LoaderCircleIcon from '../../components/icons/LoaderCircleIcon';
+import getApiUrl from '../../utils/api';
 
 export default function OtpComponent({ phoneNumber, password, onVerified }) {
     const [otp, setOtp] = useState(new Array(4).fill(""));
@@ -34,7 +35,7 @@ export default function OtpComponent({ phoneNumber, password, onVerified }) {
         setError('');
 
         try {
-            const response = await fetch('/api/session', {
+            const response = await fetch(getApiUrl('/session'), {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({

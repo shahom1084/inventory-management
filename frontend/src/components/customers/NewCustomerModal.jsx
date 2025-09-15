@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import getApiUrl from '../../utils/api';
 
 export default function NewCustomerModal({ open, onClose, onCreated }) {
     const [name, setName] = useState('');
@@ -25,7 +26,7 @@ export default function NewCustomerModal({ open, onClose, onCreated }) {
         setLoading(true);
         try {
             const token = localStorage.getItem('authToken');
-            const res = await fetch('/api/customers', {
+            const res = await fetch(getApiUrl('/customers'), {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

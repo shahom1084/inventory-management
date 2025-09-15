@@ -4,6 +4,7 @@ import NewBillModal from '../components/bills/NewBillModal';
 import EditBillModal from '../components/bills/EditBillModal';
 import BillDetailsModal from '../components/bills/BillDetailsModal';
 import ConfirmationModal from '../components/common/ConfirmationModal';
+import getApiUrl from '../utils/api';
 
 function StatusPill({ status }) {
     const statusStyles = {
@@ -178,7 +179,7 @@ export default function BillsPage() {
         setError('');
         try {
             const token = localStorage.getItem('authToken');
-            const res = await fetch('/api/bills', { headers: { 'Authorization': `Bearer ${token}` } });
+            const res = await fetch(getApiUrl('/bills'), { headers: { 'Authorization': `Bearer ${token}` } });
             const data = await res.json();
             if (!res.ok) {
                 throw new Error(data.error || 'Failed to load bills');
@@ -212,7 +213,7 @@ export default function BillsPage() {
         setLoadingBillDetails(true);
         try {
             const token = localStorage.getItem('authToken');
-            const res = await fetch(`/api/bills/${bill.id}`, { headers: { 'Authorization': `Bearer ${token}` } });
+            const res = await fetch(getApiUrl(`/bills/${bill.id}`), { headers: { 'Authorization': `Bearer ${token}` } });
             const data = await res.json();
             if (!res.ok) {
                 throw new Error(data.error || 'Failed to load bill details');
@@ -230,7 +231,7 @@ export default function BillsPage() {
         setLoadingBillDetails(true);
         try {
             const token = localStorage.getItem('authToken');
-            const res = await fetch(`/api/bills/${bill.id}`, { headers: { 'Authorization': `Bearer ${token}` } });
+            const res = await fetch(getApiUrl(`/bills/${bill.id}`), { headers: { 'Authorization': `Bearer ${token}` } });
             const data = await res.json();
             if (!res.ok) {
                 throw new Error(data.error || 'Failed to load bill details for editing');
@@ -254,7 +255,7 @@ export default function BillsPage() {
         if (!billToDelete) return;
         try {
             const token = localStorage.getItem('authToken');
-            const url = `/api/bills/${billToDelete}?restore_items=${restoreItems}`;
+            const url = getApiUrl(`/bills/${billToDelete}?restore_items=${restoreItems}`);
             const res = await fetch(url, { 
                 method: 'DELETE',
                 headers: { 'Authorization': `Bearer ${token}` }

@@ -3,6 +3,7 @@ import NewItemModal from '../components/items/NewItemModal';
 import EditItemModal from '../components/items/EditItemModal';
 import StockControl from '../components/items/StockControl';
 import ConfirmationModal from '../components/common/ConfirmationModal';
+import getApiUrl from '../utils/api';
 
 function HeaderBar({ onNewItem, initials, showDeleted, onToggleShowDeleted }) {
     return (
@@ -204,7 +205,7 @@ export default function ItemsPage() {
             try {
                 const token = localStorage.getItem('authToken');
                 if (!token) return;
-                const res = await fetch('/api/shop', { headers: { 'Authorization': `Bearer ${token}` } });
+                const res = await fetch(getApiUrl('/shop'), { headers: { 'Authorization': `Bearer ${token}` } });
                 const data = await res.json().catch(() => ({}));
                 if (res.ok && data && data.shop) setShopName(data.shop.name || '');
             } catch {}
@@ -214,7 +215,7 @@ export default function ItemsPage() {
     const fetchItems = useCallback(async () => {
         setLoading(true);
         setError('');
-        const endpoint = showDeleted ? '/api/items/deleted' : '/api/items';
+        const endpoint = showDeleted ? getApiUrl('/items/deleted') : getApiUrl('/items');
         try {
             const token = localStorage.getItem('authToken');
             const res = await fetch(endpoint, { headers: { 'Authorization': `Bearer ${token}` } });
@@ -256,7 +257,7 @@ export default function ItemsPage() {
         if (!itemToDelete) return;
         try {
             const token = localStorage.getItem('authToken');
-            const res = await fetch(`/api/items/${itemToDelete}`, { 
+            const res = await fetch(getApiUrl(`/items/${itemToDelete}`), { 
                 method: 'DELETE',
                 headers: { 'Authorization': `Bearer ${token}` }
             });
@@ -273,7 +274,7 @@ export default function ItemsPage() {
     const handleRestore = async (itemId) => {
         try {
             const token = localStorage.getItem('authToken');
-            const res = await fetch(`/api/items/${itemId}/restore`, {
+            const res = await fetch(getApiUrl(`/items/${itemId}/restore`), {
                 method: 'PATCH',
                 headers: { 'Authorization': `Bearer ${token}` }
             });
@@ -289,7 +290,7 @@ export default function ItemsPage() {
         setStockLoading(prev => ({ ...prev, [itemId]: true }));
         try {
             const token = localStorage.getItem('authToken');
-            const res = await fetch(`/api/items/${itemId}/stock`, {
+            const res = await fetch(getApiUrl(`/items/${itemId}/stock`), {
                 method: 'PATCH',
                 headers: {
                     'Content-Type': 'application/json',

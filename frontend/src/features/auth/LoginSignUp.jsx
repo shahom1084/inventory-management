@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import SmartphoneIcon from '../../components/icons/SmartphoneIcon';
 import KeyRoundIcon from '../../components/icons/KeyRoundIcon';
 import LoaderCircleIcon from '../../components/icons/LoaderCircleIcon';
+import getApiUrl from '../../utils/api';
 
 export default function LoginSignUpComponent({ onOtpSent, setPhoneNumber, phoneNumber }) {
     const [password, setPassword] = useState('');
@@ -19,7 +20,7 @@ export default function LoginSignUpComponent({ onOtpSent, setPhoneNumber, phoneN
         setUserExists(null);
         setError('');
         try {
-            const response = await fetch('/api/check-user', {
+            const response = await fetch(getApiUrl('/check-user'), {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ phoneNumber: number })

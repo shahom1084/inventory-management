@@ -3,6 +3,7 @@ import { useShop } from '../context/ShopContext';
 import NewCustomerModal from '../components/customers/NewCustomerModal';
 import EditCustomerModal from '../components/customers/EditCustomerModal';
 import ConfirmationModal from '../components/common/ConfirmationModal';
+import getApiUrl from '../utils/api';
 
 function HeaderBar({ onNewCustomer }) {
     const { initials } = useShop();
@@ -144,7 +145,7 @@ export default function CustomersPage() {
         setError('');
         try {
             const token = localStorage.getItem('authToken');
-            const res = await fetch('/api/customers', { headers: { 'Authorization': `Bearer ${token}` } });
+            const res = await fetch(getApiUrl('/customers'), { headers: { 'Authorization': `Bearer ${token}` } });
             const data = await res.json();
             if (!res.ok) {
                 throw new Error(data.error || 'Failed to load customers');
@@ -186,7 +187,7 @@ export default function CustomersPage() {
         if (!customerToDelete) return;
         try {
             const token = localStorage.getItem('authToken');
-            const res = await fetch(`/api/customers/${customerToDelete}`, { 
+            const res = await fetch(getApiUrl(`/customers/${customerToDelete}`), { 
                 method: 'DELETE',
                 headers: { 'Authorization': `Bearer ${token}` }
             });

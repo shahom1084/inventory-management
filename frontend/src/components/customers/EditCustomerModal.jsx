@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import getApiUrl from '../../utils/api';
 
 export default function EditCustomerModal({ open, onClose, onUpdated, customer }) {
     const [name, setName] = useState('');
@@ -34,7 +35,7 @@ export default function EditCustomerModal({ open, onClose, onUpdated, customer }
         setLoading(true);
         try {
             const token = localStorage.getItem('authToken');
-            const res = await fetch(`/api/customers/${customer.id}`, {
+            const res = await fetch(getApiUrl(`/customers/${customer.id}`), {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',

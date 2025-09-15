@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import getApiUrl from '../../utils/api';
 
 export default function EditItemModal({ item, open, onClose, onUpdated }) {
     const [name, setName] = useState('');
@@ -33,7 +34,7 @@ export default function EditItemModal({ item, open, onClose, onUpdated }) {
         setError('');
         try {
             const token = localStorage.getItem('authToken');
-            const res = await fetch(`/api/items/${item.id}`,
+            const res = await fetch(getApiUrl(`/items/${item.id}`),
             {
                 method: 'PUT',
                 headers: {

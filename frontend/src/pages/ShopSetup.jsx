@@ -1,6 +1,7 @@
 // frontend/src/pages/ShopSetup.jsx
 
 import React, { useState } from 'react';
+import getApiUrl from '../utils/api';
 
 export default function ShopSetup({ onShopCreated }) {
     const [name, setName] = useState('');
@@ -20,7 +21,7 @@ export default function ShopSetup({ onShopCreated }) {
 
         try {
             const token = localStorage.getItem('authToken');
-            const response = await fetch('/api/shop', {
+            const response = await fetch(getApiUrl('/shop'), {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
