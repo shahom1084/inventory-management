@@ -1,6 +1,6 @@
 // netlify/functions/api.js
 exports.handler = async (event, context) => {
-  const url = `https://inventory-management-sbm.up.railway.app${event.path.replace('/.netlify/functions/api', '')}`;
+  const url = `https://inventory-management-sbm.up.railway.app${event.path.replace('/.netlify/functions/', '')}`;
   
   try {
     const response = await fetch(url, {
