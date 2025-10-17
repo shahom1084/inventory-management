@@ -6,7 +6,7 @@ db.txt
 firebaseconfig.txt
 *.png
 .env
-
+backup.sql
 # Node (if any)
 node_modules/
 
