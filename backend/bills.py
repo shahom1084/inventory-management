@@ -191,6 +191,23 @@ def update_bill(current_user_id, bill_id):
         status = data.get('status')
         amount_paid = data.get('amountPaid')
 
+        total_amount_val = float(total_amount) if total_amount is not None else 0.0
+        if status == 'paid':
+            amount_paid = total_amount_val
+        elif status == 'unpaid':
+            amount_paid = 0.0
+        else:
+            amount_paid = float(amount_paid) if amount_paid is not None else 0.0
+
+        if amount_paid >= total_amount_val and total_amount_val > 0:
+            status = 'paid'
+            amount_paid = total_amount_val
+        elif amount_paid <= 0:
+            status = 'unpaid'
+            amount_paid = 0.0
+        else:
+            status = 'partial'
+
         if customer_name:
             customer_name = customer_name.strip()
         if not customer_name or customer_name.lower() == 'walk-in':
@@ -369,14 +386,23 @@ def create_new_bill(current_user_id):
     if not bill_items or not isinstance(bill_items, list) or len(bill_items) == 0:
         return jsonify({"error": "At least one item is required to create a bill."} ), 400
 
-    # Handle amount_paid based on status
+    # Auto-calculate and align status and amount_paid
+    total_amount_val = float(total_amount) if total_amount is not None else 0.0
     if status == 'paid':
-        amount_paid = total_amount
+        amount_paid = total_amount_val
     elif status == 'unpaid':
-        amount_paid = 0
-    elif status == 'partial':
-        if amount_paid is None:
-            amount_paid = total_amount 
+        amount_paid = 0.0
+    else:
+        amount_paid = float(amount_paid) if amount_paid is not None else 0.0
+
+    if amount_paid >= total_amount_val and total_amount_val > 0:
+        status = 'paid'
+        amount_paid = total_amount_val
+    elif amount_paid <= 0:
+        status = 'unpaid'
+        amount_paid = 0.0
+    else:
+        status = 'partial'
 
     conn = get_db_connection()
     cur = conn.cursor()
