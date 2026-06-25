@@ -54,8 +54,14 @@ function BillDetailsModal({ bill, onClose, onEdit, onDelete, loading }) {
                                 </div>
                                 <div className="flex justify-between mt-2">
                                     <span className="font-semibold">Customer:</span>
-                                    <span>{bill.customer_name}</span>
+                                    <span>{bill.customer_name || 'Walk-in'}</span>
                                 </div>
+                                {bill.customer_phone && (
+                                    <div className="flex justify-between mt-2">
+                                        <span className="font-semibold">Phone:</span>
+                                        <span>{bill.customer_phone}</span>
+                                    </div>
+                                )}
                                 <div className="flex justify-between mt-2">
                                     <span className="font-semibold">Date:</span>
                                     <span>{new Date(bill.createdAt).toLocaleDateString()}</span>

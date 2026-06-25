@@ -19,10 +19,11 @@ def get_bills(current_user_id):
         
         shop_id = shop_record[0]
         cur.execute("""
-            SELECT b.id, b.customer_id, c.name, b.total_amount, b.bill_date, b.status, b.amount_paid 
+            SELECT b.id, b.customer_id, c.name, c.phone_number, b.total_amount, b.bill_date, b.status, b.amount_paid 
             FROM bills b
             LEFT JOIN customers c ON b.customer_id = c.id
             WHERE b.shop_id = %s
+            ORDER BY b.bill_date DESC, b.id DESC
         """, (shop_id,))
         bills = cur.fetchall()
         
@@ -31,10 +32,11 @@ def get_bills(current_user_id):
                 "id": bill[0], 
                 "customer_id": bill[1],
                 "customer_name": bill[2] or "Walk-in",
-                "totalAmount": float(bill[3]), 
-                "createdAt": bill[4].isoformat(), 
-                "status": bill[5],
-                "amountPaid": float(bill[6]) if bill[6] is not None else 0
+                "customer_phone": bill[3] or "",
+                "totalAmount": float(bill[4]), 
+                "createdAt": bill[5].isoformat(), 
+                "status": bill[6],
+                "amountPaid": float(bill[7]) if bill[7] is not None else 0
             }
             for bill in bills
         ]
@@ -64,7 +66,7 @@ def get_bill_details(current_user_id, bill_id):
 
         # Fetch bill details
         cur.execute("""
-            SELECT b.id, b.customer_id, c.name, b.total_amount, b.bill_date, b.status, b.amount_paid 
+            SELECT b.id, b.customer_id, c.name, c.phone_number, b.total_amount, b.bill_date, b.status, b.amount_paid 
             FROM bills b
             LEFT JOIN customers c ON b.customer_id = c.id
             WHERE b.id = %s
@@ -87,10 +89,11 @@ def get_bill_details(current_user_id, bill_id):
             "id": bill[0],
             "customer_id": bill[1],
             "customer_name": bill[2] or "Walk-in",
-            "totalAmount": float(bill[3]),
-            "createdAt": bill[4].isoformat(),
-            "status": bill[5],
-            "amountPaid": float(bill[6]) if bill[6] is not None else 0,
+            "customer_phone": bill[3] if bill[3] is not None else "",
+            "totalAmount": float(bill[4]),
+            "createdAt": bill[5].isoformat(),
+            "status": bill[6],
+            "amountPaid": float(bill[7]) if bill[7] is not None else 0,
             "items": [
                 {
                     "id": item[0],
@@ -188,23 +191,56 @@ def update_bill(current_user_id, bill_id):
         status = data.get('status')
         amount_paid = data.get('amountPaid')
 
-        # Customer handling
-        customer_id = None
+        if customer_name:
+            customer_name = customer_name.strip()
+        if not customer_name or customer_name.lower() == 'walk-in':
+            customer_name = None
+    
         if customer_phone:
-            cur.execute("SELECT id FROM customers WHERE phone_number = %s AND shop_id = %s;", (customer_phone, shop_id))
-            customer_record = cur.fetchone()
-            if customer_record:
-                customer_id = customer_record[0]
-        if not customer_id and customer_name:
-            cur.execute("INSERT INTO customers (name, phone_number, shop_id) VALUES (%s, %s, %s) RETURNING id;", (customer_name, customer_phone, shop_id))
-            customer_id = cur.fetchone()[0]
+            customer_phone = customer_phone.strip()
+        if not customer_phone:
+            customer_phone = None
+        # Customer handling
+        cur.execute("SELECT customer_id FROM bills WHERE id = %s;", (bill_id,))
+        old_customer_id = cur.fetchone()[0]
+
+        old_name = None
+        old_phone = None
+        if old_customer_id:
+            cur.execute("SELECT name, phone_number FROM customers WHERE id = %s;", (old_customer_id,))
+            cust_record = cur.fetchone()
+            if cust_record:
+                old_name = cust_record[0]
+                old_phone = cust_record[1]
+
+        customer_id = None
+
+        if (customer_name == old_name) and (customer_phone == old_phone):
+            customer_id = old_customer_id
+        else:
+            if customer_name or customer_phone:
+                if customer_phone:
+                    cur.execute("SELECT id FROM customers WHERE phone_number = %s AND shop_id = %s;", (customer_phone, shop_id))
+                    customer_record = cur.fetchone()
+                    if customer_record:
+                        customer_id = customer_record[0]
+                
+                if customer_id and customer_name:
+                    cur.execute("UPDATE customers SET name = %s WHERE id = %s;", (customer_name, customer_id))
+
+                if not customer_id:
+                    cur.execute(
+                        "INSERT INTO customers (name, phone_number, shop_id) VALUES (%s, %s, %s) RETURNING id;",
+                        (customer_name, customer_phone, shop_id)
+                    )
+                    customer_id = cur.fetchone()[0]
 
         # Update bill
         cur.execute("""
-            UPDATE bills 
-            SET customer_id = %s, total_amount = %s, status = %s, amount_paid = %s
-            WHERE id = %s;
-        """, (customer_id, total_amount, status, amount_paid, bill_id))
+                    UPDATE bills 
+                    SET customer_id = %s, total_amount = %s, status = %s, amount_paid = %s
+                    WHERE id = %s;
+                    """, (customer_id, total_amount, status, amount_paid, bill_id))
 
         # Insert new bill items and update stock
         for item in bill_items:
@@ -320,6 +356,16 @@ def create_new_bill(current_user_id):
     status = data.get('status')
     amount_paid = data.get('amountPaid')
 
+    if customer_name:
+        customer_name = customer_name.strip()
+    if not customer_name or customer_name.lower() == 'walk-in':
+        customer_name = None
+
+    if customer_phone:
+        customer_phone = customer_phone.strip()
+    if not customer_phone:
+        customer_phone = None
+
     if not bill_items or not isinstance(bill_items, list) or len(bill_items) == 0:
         return jsonify({"error": "At least one item is required to create a bill."} ), 400
 
@@ -345,12 +391,6 @@ def create_new_bill(current_user_id):
         if customer_name or customer_phone:
             if customer_phone:
                 cur.execute("SELECT id FROM customers WHERE phone_number = %s AND shop_id = %s;", (customer_phone, shop_id))
-                customer_record = cur.fetchone()
-                if customer_record:
-                    customer_id = customer_record[0]
-            
-            if not customer_id and customer_name:
-                cur.execute("SELECT id FROM customers WHERE name = %s AND shop_id = %s;", (customer_name, shop_id))
                 customer_record = cur.fetchone()
                 if customer_record:
                     customer_id = customer_record[0]

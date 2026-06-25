@@ -202,7 +202,8 @@ export default function BillsPage() {
         if (!q) return bills;
         return bills.filter((bill) =>
             bill.id.toLowerCase().includes(q) ||
-            (bill.customer_name && bill.customer_name.toLowerCase().includes(q))
+            (bill.customer_name && bill.customer_name.toLowerCase().includes(q)) ||
+            (bill.customer_phone && bill.customer_phone.toLowerCase().includes(q))
         );
     }, [bills, query]);
 

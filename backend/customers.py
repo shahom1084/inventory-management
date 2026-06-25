@@ -37,6 +37,26 @@ def create_customer(current_user_id):
     email = data.get('email')
     address = data.get('address')
 
+    if name is not None:
+        name = name.strip()
+        if not name:
+            name = None
+
+    if phone_number is not None:
+        phone_number = phone_number.strip()
+        if not phone_number:
+            phone_number = None
+
+    if email is not None:
+        email = email.strip()
+        if not email:
+            email = None
+
+    if address is not None:
+        address = address.strip()
+        if not address:
+            address = None
+
     if not any([name, phone_number, email, address]):
         return jsonify({"error": "At least one field (name, phone, email, or address) is required."}), 400
 
@@ -74,6 +94,26 @@ def update_customer(current_user_id, customer_id):
     phone_number = data.get('phone_number')
     email = data.get('email')
     address = data.get('address')
+
+    if name is not None:
+        name = name.strip()
+        if not name:
+            name = None
+
+    if phone_number is not None:
+        phone_number = phone_number.strip()
+        if not phone_number:
+            phone_number = None
+
+    if email is not None:
+        email = email.strip()
+        if not email:
+            email = None
+
+    if address is not None:
+        address = address.strip()
+        if not address:
+            address = None
 
     if not any([name, phone_number, email, address]):
         return jsonify({"error": "At least one field (name, phone, email, or address) is required."}), 400
