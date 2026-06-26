@@ -51,6 +51,9 @@ export default function NewBillModal({ open, onClose, onCreated }) {
             });
             const data = await res.json();
             if (res.ok) {
+                if (data.customer_name) {
+                    setCustomerName(data.customer_name);
+                }
                 if (data.customer_items && data.customer_items.length > 0) {
                     const itemsWithCustomPrices = data.items.map(item => {
                         const customerItem = data.customer_items.find(ci => ci.id === item.id);
@@ -157,7 +160,7 @@ export default function NewBillModal({ open, onClose, onCreated }) {
             billItems,
             totalAmount,
             status,
-            amountPaid: status === 'partial' ? amountPaid : undefined,
+            amountPaid: status === 'partial' ? amountPaid : (status === 'paid' ? totalAmount : 0),
         };
 
         try {

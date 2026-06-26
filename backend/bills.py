@@ -326,7 +326,7 @@ def get_customer_prices(current_user_id):
             return jsonify({"error": "No shop associated with this user."})
         shop_id = shop_record[0]
 
-        cur.execute("SELECT id FROM customers WHERE TRIM(phone_number) = %s AND shop_id = %s;", (phone_number, shop_id))
+        cur.execute("SELECT id, name FROM customers WHERE TRIM(phone_number) = %s AND shop_id = %s AND is_delete = 0;", (phone_number, shop_id))
         customer_record = cur.fetchone()
 
         all_items = fetch_items(current_user_id)
@@ -334,9 +334,10 @@ def get_customer_prices(current_user_id):
             return jsonify({"error": all_items}), 404
 
         if not customer_record:
-            return jsonify({"items": all_items, "customer_items": []}), 200
+            return jsonify({"items": all_items, "customer_items": [], "customer_name": None}), 200
 
         customer_id = customer_record[0]
+        customer_name = customer_record[1]
 
         cur.execute("""
             SELECT item_id, custom_price
@@ -355,7 +356,7 @@ def get_customer_prices(current_user_id):
                 customer_item['custom_price'] = customer_prices_map[item_id_str]
                 customer_items.append(customer_item)
 
-        return jsonify({"items": all_items, "customer_items": customer_items}), 200
+        return jsonify({"items": all_items, "customer_items": customer_items, "customer_name": customer_name}), 200
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500

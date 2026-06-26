@@ -19,7 +19,7 @@ export default function EditBillModal({ open, onClose, onUpdated, bill }) {
         if (bill) {
             setCustomerName(bill.customer_name || '');
             setCustomerPhone(bill.customer_phone || '');
-            setStatus(bill.status || 'paid');
+            setStatus(bill.status?.toLowerCase() || 'paid');
             setAmountPaid(bill.amountPaid || 0);
             setBillItems(bill.items.map(item => ({ ...item, id: item.id, item: item, quantity: item.quantity, price: item.price })) || []);
         }
@@ -62,6 +62,9 @@ export default function EditBillModal({ open, onClose, onUpdated, bill }) {
             });
             const data = await res.json();
             if (res.ok) {
+                if (data.customer_name) {
+                    setCustomerName(data.customer_name);
+                }
                 if (data.customer_items && data.customer_items.length > 0) {
                     const itemsWithCustomPrices = data.items.map(item => {
                         const customerItem = data.customer_items.find(ci => ci.id === item.id);
@@ -168,7 +171,7 @@ export default function EditBillModal({ open, onClose, onUpdated, bill }) {
             billItems,
             totalAmount,
             status,
-            amountPaid: status === 'partial' ? amountPaid : undefined,
+            amountPaid: status === 'partial' ? amountPaid : (status === 'paid' ? totalAmount : 0),
         };
 
         try {

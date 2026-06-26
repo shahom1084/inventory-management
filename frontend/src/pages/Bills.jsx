@@ -12,9 +12,10 @@ function StatusPill({ status }) {
         unpaid: 'bg-red-100 text-red-800',
         partial: 'bg-yellow-100 text-yellow-800',
     };
+    const lowerStatus = status?.toLowerCase() || '';
     return (
-        <span className={`px-2 py-1 rounded-full text-xs font-medium ${statusStyles[status] || 'bg-slate-100 text-slate-800'}`}>
-            {status}
+        <span className={`px-2 py-1 rounded-full text-xs font-medium ${statusStyles[lowerStatus] || 'bg-slate-100 text-slate-800'}`}>
+            {lowerStatus}
         </span>
     );
 }
